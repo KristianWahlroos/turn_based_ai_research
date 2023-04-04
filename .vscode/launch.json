@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'turn_based_ai_research'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=turn_based_ai_research",
+                    "--package=turn_based_ai_research"
+                ],
+                "filter": {
+                    "name": "turn_based_ai_research",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'turn_based_ai_research'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=turn_based_ai_research",
+                    "--package=turn_based_ai_research"
+                ],
+                "filter": {
+                    "name": "turn_based_ai_research",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
