@@ -1297,6 +1297,41 @@ pub struct Stats {
     pub spe: i32,
 }
 
+pub enum LevelGeneration {
+    From80To89Uniform,
+    From80To89BalancedLinearyLowRange,
+    From80To89BalancedLinearyMedRange,
+    From80To89BalancedLinearyHighRange,
+    Only88,
+}
+
+impl LevelGeneration {
+    pub fn get_level(&self, base_stat_sum: i32) -> i32 {
+        match self {
+            LevelGeneration::From80To89Uniform => rand::thread_rng().gen_range(80..=89),
+            LevelGeneration::From80To89BalancedLinearyLowRange => {
+                LevelGeneration::get_balanced_level(base_stat_sum, 73, 12)
+            }
+            LevelGeneration::From80To89BalancedLinearyMedRange => {
+                LevelGeneration::get_balanced_level(base_stat_sum, 63, 24)
+            }
+            LevelGeneration::From80To89BalancedLinearyHighRange => {
+                LevelGeneration::get_balanced_level(base_stat_sum, 53, 36)
+            }
+            LevelGeneration::Only88 => 88,
+        }
+    }
+
+    fn get_balanced_level(base_stat_sum: i32, min_value: i32, increment: i32) -> i32 {
+        let value = (base_stat_sum - (min_value * 6)) / increment;
+        80 + if base_stat_sum - (min_value * 6) == increment * 10 {
+            9 // perfect base_stats are moved to one category lower
+        } else {
+            value
+        }
+    }
+}
+
 /// Base stats' sum about 500 chosen for now
 pub enum GenerationMethod {
     Average,
@@ -1563,6 +1598,27 @@ mod tests {
             ],
         ]
     }
+
+    #[test]
+    fn level_generation() {
+        let mut highest_value_tested = 0;
+        for i in 0..10 {
+            for j in 0..36 {
+                highest_value_tested = 318 + j + i * 36;
+                assert_eq!(
+                    80 + i,
+                    LevelGeneration::get_balanced_level(highest_value_tested, 53, 36),
+                    "i: {} and j: {} and highest_value_tested: {}",
+                    i,
+                    j,
+                    highest_value_tested
+                );
+            }
+        }
+        assert_eq!(highest_value_tested, 677);
+        assert_eq!(89, LevelGeneration::get_balanced_level(678, 53, 36));
+    }
+
     #[test]
     fn stat_generation_test() {
         // get_slow_tank uses 146 base stat for hp and 28 for others. level is 88
