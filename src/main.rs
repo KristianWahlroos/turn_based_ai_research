@@ -215,11 +215,8 @@ pub fn get_crit_chance(stage: i32) -> f32 {
     }
 }
 
-// TODO add random rolls
 /// [damage formula](https://bulbapedia.bulbagarden.net/wiki/Damage#Generation_IV)
-/// [MoveID::MeFirst] not yet implemented as it seems not to appear in the datasets. Also [MoveID::Metronome] won't trigger Me First
 pub fn calculate_damage(
-    // creatures: &[[Creature; 6]; 2],
     power: i32,
     attack: i32,
     defense: i32,
@@ -265,8 +262,8 @@ impl AI for RandomAI {
     }
 }
 
-fn is_team_fainted(creature_instances: &[[CreatureInstance; 6]; 2], side: bool) -> bool {
-    for instance in &creature_instances[side as usize] {
+fn has_team_fainted(creature_instances: &[[CreatureInstance; 6]; 2], side: usize) -> bool {
+    for instance in &creature_instances[side] {
         if !instance.is_fainted() {
             return false;
         }
@@ -473,7 +470,7 @@ impl BattleInstance {
         }
         self.volatile_statuses[actioner] = vec![];
         self.battler_ids[actioner] = switch_to_id;
-        // TODO add spikes behaviour
+        // TODO consider add move spikes here
     }
 
     fn take_damage(
@@ -526,7 +523,7 @@ impl BattleInstance {
         let attacker = &creatures[actioner as usize][self.battler_ids[actioner as usize]];
         // TODO immunities should cause failure here
         let mut success = true;
-        // Reduce PP // or we shouldn't do it here because of sleep talk???
+        // TODO consider if PP should be included
         let base_hit_chance = match self.get_chance_of_success(attacker, actioner, move_id) {
             Some(chance) => {
                 if !battle_settings.always_hits {
@@ -534,7 +531,7 @@ impl BattleInstance {
                     assert!(random <= 1.0);
                     assert!(random >= 0.0);
                     if chance < random {
-                        return; // TODO self destruct does stuff even if the main attack misses
+                        return;
                     }
                 }
                 chance
@@ -562,7 +559,6 @@ impl BattleInstance {
                     battle_settings,
                     creatures,
                     creature_instances,
-                    &attacker.moves[move_id].id,
                     true,
                     unit.power.unwrap(),
                     attacker.level as i32,
@@ -575,7 +571,6 @@ impl BattleInstance {
                     battle_settings,
                     creatures,
                     creature_instances,
-                    &attacker.moves[move_id].id,
                     false,
                     unit.power.unwrap(),
                     attacker.level as i32,
@@ -645,7 +640,6 @@ impl BattleInstance {
         battle_settings: &BattleSettings,
         creatures: &[[Creature; 6]; 2],
         creature_instances: &mut [[CreatureInstance; 6]; 2],
-        move_id: &MoveID, // TODO consider is this right solution
         physical: bool,
         power: i32,
         level: i32,
@@ -653,7 +647,6 @@ impl BattleInstance {
         attacker: usize,
         damage_taker: usize,
         base_hit_chance: f32,
-        // target_self: bool,
     ) -> bool {
         let (attack, defense, attack_stage, defense_stage) = if physical {
             (
@@ -925,15 +918,6 @@ impl From<i32> for Type {
             16 => Type::Dark,
             _ => unimplemented!("Type not implemented {}", item),
         }
-    }
-}
-
-fn get_fainted_interrupt(any_faints: [bool; 2]) -> Option<Interrupt> {
-    match any_faints {
-        [true, true] => Some(Interrupt::BothFainted),
-        [true, false] => Some(Interrupt::EnemyFainted),
-        [false, true] => Some(Interrupt::PlayerFainted),
-        [false, false] => None,
     }
 }
 
