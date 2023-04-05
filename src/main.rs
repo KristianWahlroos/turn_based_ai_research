@@ -1388,6 +1388,140 @@ impl BaseStatsGeneration {
     }
 }
 
+/// TODOS:
+/// Currently always two stab moves
+/// No setting for favoring physical or special
+/// Could have bool for duplicate type removal
+/// Should prevent duplicate stats modifier skills
+/// Should add ratios to stats modifier stat
+pub struct MoveGenerationSettings {
+    low_attack_ratio: i32,
+    med_attack_ratio: i32,
+    high_attack_ratio: i32,
+    attack_ratio: i32, // attack ratio should be low as there is already two attacks that are not rolled
+    stats_mod_chance: i32,
+    one_step_stat_ratio: i32,
+    two_step_stat_ratio: i32,
+    buff_ratio: i32,
+    debuff_ratio: i32,
+    always_hit_ratio: i32,
+    missable_ratio: i32,
+}
+
+impl Default for MoveGenerationSettings {
+    fn default() -> Self {
+        MoveGenerationSettings {
+            low_attack_ratio: 1,
+            med_attack_ratio: 1,
+            high_attack_ratio: 1,
+            attack_ratio: 1,
+            stats_mod_chance: 1,
+            one_step_stat_ratio: 1,
+            two_step_stat_ratio: 1,
+            buff_ratio: 1,
+            debuff_ratio: 1,
+            always_hit_ratio: 1,
+            missable_ratio: 1,
+        }
+    }
+}
+
+impl MoveGenerationSettings {
+    /// for attacks: 17 types * 2 effects * 6 different base moves = 204
+    /// for stat modifiers:
+    pub fn generate_move_set(&self, types: [Type; 2]) -> [Move; 4] {
+        let mut rng = rand::thread_rng();
+        let mut moves = vec![];
+        let mut types_used = vec![types[0], types[1]];
+        for i in 0..2 {
+            moves.push(self.get_base_attack(&mut rng, types[i]));
+        }
+        for _ in 0..2 {
+            let is_attack_value = rng.gen_range(0..(self.attack_ratio + self.stats_mod_chance));
+            if is_attack_value < self.attack_ratio {
+                let new_type = MoveGenerationSettings::get_new_type(&mut rng, &types_used);
+                types_used.push(new_type);
+                moves.push(self.get_base_attack(&mut rng, new_type));
+            } else {
+                moves.push(self.get_stat_modifier_move(&mut rng));
+            }
+        }
+        // This is bit lazy .. sorry
+        [
+            moves[0].clone(),
+            moves[1].clone(),
+            moves[2].clone(),
+            moves[3].clone(),
+        ]
+    }
+
+    pub fn get_stat_modifier_move(&self, rng: &mut ThreadRng) -> Move {
+        let is_buff_value = rng.gen_range(0..(self.buff_ratio + self.debuff_ratio));
+        let is_one_step_value =
+            rng.gen_range(0..(self.one_step_stat_ratio + self.two_step_stat_ratio));
+        if is_buff_value < self.buff_ratio {
+            if is_one_step_value < self.one_step_stat_ratio {
+                (&MoveID::StatsUp(self.get_stat_category(rng))).into()
+            } else {
+                (&MoveID::StatsUpDouble(self.get_stat_category(rng))).into()
+            }
+        } else {
+            if is_one_step_value < self.one_step_stat_ratio {
+                (&MoveID::StatsDown(self.get_stat_category(rng))).into()
+            } else {
+                (&MoveID::StatsDownDouble(self.get_stat_category(rng))).into()
+            }
+        }
+    }
+
+    /// TODO add ratios here and more rules described above
+    pub fn get_stat_category(&self, rng: &mut ThreadRng) -> VolatileStatus {
+        VolatileStatus::from(rng.gen_range(0..8))
+    }
+
+    pub fn get_new_type(rng: &mut ThreadRng, types_used: &Vec<Type>) -> Type {
+        loop {
+            let new_type = Type::from(rng.gen_range(0..17));
+            let mut duplicate = false;
+            for old_type in types_used {
+                if old_type == &new_type {
+                    duplicate = true;
+                }
+            }
+            if !duplicate {
+                return new_type;
+            } else {
+                println!("Duplicate found");
+            }
+        }
+    }
+
+    pub fn get_base_attack(&self, rng: &mut ThreadRng, move_type: Type) -> Move {
+        let miss_value = rng.gen_range(0..(self.always_hit_ratio + self.missable_ratio));
+        let strenght_value = rng
+            .gen_range(0..(self.low_attack_ratio + self.med_attack_ratio + self.high_attack_ratio));
+        let physical = rand::random::<bool>();
+        if miss_value < self.always_hit_ratio {
+            if strenght_value < self.low_attack_ratio {
+                (&MoveID::DamageLow(physical, move_type)).into()
+            } else if strenght_value < self.low_attack_ratio + self.med_attack_ratio {
+                (&MoveID::DamageMed(physical, move_type)).into()
+            } else {
+                (&MoveID::DamageHigh(physical, move_type)).into()
+            }
+        } else {
+            if strenght_value < self.low_attack_ratio {
+                // Low value skill, because high miss rate
+                (&MoveID::MissHigh(physical, move_type)).into()
+            } else if strenght_value < self.low_attack_ratio + self.med_attack_ratio {
+                (&MoveID::MissMed(physical, move_type)).into()
+            } else {
+                (&MoveID::MissLow(physical, move_type)).into()
+            }
+        }
+    }
+}
+
 pub fn get_dual_types(rng: &mut ThreadRng) -> [Type; 2] {
     let first_type = rng.gen_range(0..17);
     loop {
