@@ -1333,20 +1333,20 @@ impl LevelGeneration {
 }
 
 /// Base stats' sum about 500 chosen for now
-pub enum GenerationMethod {
+pub enum BaseStatsGeneration {
     Average,
     SpreadLow,
     SpreadMed,
     SpreadHigh,
 }
 
-impl GenerationMethod {
+impl BaseStatsGeneration {
     pub fn get_base_stat(&self) -> i32 {
         match self {
-            GenerationMethod::Average => 83,
-            GenerationMethod::SpreadLow => rand::thread_rng().gen_range(73..=93),
-            GenerationMethod::SpreadMed => rand::thread_rng().gen_range(63..=103),
-            GenerationMethod::SpreadHigh => rand::thread_rng().gen_range(53..=113),
+            BaseStatsGeneration::Average => 83,
+            BaseStatsGeneration::SpreadLow => rand::thread_rng().gen_range(73..=93),
+            BaseStatsGeneration::SpreadMed => rand::thread_rng().gen_range(63..=103),
+            BaseStatsGeneration::SpreadHigh => rand::thread_rng().gen_range(53..=113),
         }
     }
 
