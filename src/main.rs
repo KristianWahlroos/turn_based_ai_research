@@ -1470,6 +1470,22 @@ pub enum VolatileStatus {
     CrtStage,
 }
 
+impl From<i32> for VolatileStatus {
+    fn from(item: i32) -> Self {
+        match item {
+            0 => VolatileStatus::AtkStage,
+            1 => VolatileStatus::DefStage,
+            2 => VolatileStatus::SpaStage,
+            3 => VolatileStatus::SpdStage,
+            4 => VolatileStatus::SpeStage,
+            5 => VolatileStatus::EvaStage,
+            6 => VolatileStatus::AccStage,
+            7 => VolatileStatus::CrtStage,
+            _ => panic!("There is no volatile status for this value"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
