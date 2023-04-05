@@ -1387,6 +1387,18 @@ impl BaseStatsGeneration {
     }
 }
 
+pub fn get_dual_types(rng: &mut ThreadRng) -> [Type; 2] {
+    let first_type = rng.gen_range(0..17);
+    loop {
+        let second_type = rng.gen_range(0..17);
+        if first_type != second_type {
+            return [Type::from(first_type), Type::from(second_type)];
+        } else {
+            println!("Duplicate when creating types cool");
+        }
+    }
+}
+
 impl Stats {
     pub fn new(base_stats: [i32; 6], level: i32) -> Stats {
         Stats {
