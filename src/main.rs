@@ -1289,9 +1289,28 @@ impl Creature {
             _ => panic!("Creature has not valid amount of types"),
         }
     }
-}
 
-impl Creature {
+    pub fn generate_creature(creature_generator: &CreatureGenerator) -> Creature {
+        let (base_stats, sum) = creature_generator
+            .base_stats_generation
+            .get_base_stats_with_sum();
+        let level = creature_generator.level_generation.get_level(sum);
+        let stats = Stats::new(base_stats, level);
+        let types = get_dual_types(&mut rand::thread_rng());
+        let moves = creature_generator
+            .move_generation_settings
+            .generate_move_set(types);
+
+        // let level = creature_generator.
+        Creature {
+            species: "generated".to_string(),
+            level,
+            moves,
+            stats,
+            types,
+        }
+    }
+
     pub fn get_stab_modifier(&self, attack_type: &Type) -> f32 {
         for creature_type in &self.types {
             if creature_type == attack_type {
@@ -1385,6 +1404,22 @@ impl BaseStatsGeneration {
             base_stats[i] = base_stat;
         }
         (base_stats, sum)
+    }
+}
+
+pub struct CreatureGenerator {
+    pub move_generation_settings: MoveGenerationSettings,
+    pub base_stats_generation: BaseStatsGeneration,
+    pub level_generation: LevelGeneration,
+}
+
+impl Default for CreatureGenerator {
+    fn default() -> Self {
+        CreatureGenerator {
+            move_generation_settings: MoveGenerationSettings::default(),
+            base_stats_generation: BaseStatsGeneration::SpreadHigh,
+            level_generation: LevelGeneration::From80To89BalancedLinearyHighRange,
+        }
     }
 }
 
@@ -1624,164 +1659,84 @@ impl From<i32> for VolatileStatus {
 mod tests {
     use super::*;
 
-    fn get_basic_setup() -> (
-        [[Creature; 6]; 2],
+    fn setup(
+        creature_generator: &CreatureGenerator,
+    ) -> (
         [[CreatureInstance; 6]; 2],
+        [[Creature; 6]; 2],
         BattleInstance,
         BattleSettings,
-        CombatAction,
-        CombatAction,
     ) {
+        let creatures = get_team(creature_generator);
         (
-            get_placeholder_creatures(),
-            get_placeholder_creature_instances(),
+            get_full_health_team(&creatures),
+            creatures,
             BattleInstance::default(),
             BattleSettings::default(),
-            CombatAction::Attack(0),
-            CombatAction::Attack(0),
         )
     }
 
-    fn get_placeholder_creatures() -> [[Creature; 6]; 2] {
+    fn get_team(creature_generator: &CreatureGenerator) -> [[Creature; 6]; 2] {
         [
             [
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats {
-                        hp: 300,
-                        atk: 100,
-                        def: 100,
-                        spa: 100,
-                        spd: 100,
-                        spe: 300,
-                    },
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
             ],
             [
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
-                Creature {
-                    species: "Placeholder".to_string(),
-                    level: 100,
-                    moves: vec![(&MoveID::DamageLow).into()],
-                    stats: Stats::default(),
-                    types: vec![Type::Normal],
-                },
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
+                Creature::generate_creature(creature_generator),
             ],
         ]
     }
 
-    fn get_placeholder_creature_instances() -> [[CreatureInstance; 6]; 2] {
+    fn get_full_health_team(creatures: &[[Creature; 6]; 2]) -> [[CreatureInstance; 6]; 2] {
         [
             [
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][0].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][1].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][2].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][3].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][4].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[0][5].stats.hp,
                 },
             ],
             [
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][0].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][1].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][2].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][3].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][4].stats.hp,
                 },
                 CreatureInstance {
-                    current_health: 300,
+                    current_health: creatures[1][5].stats.hp,
                 },
             ],
         ]
@@ -1813,5 +1768,16 @@ mod tests {
         let tanky_stats = Stats::get_slow_tank();
         assert_eq!(tanky_stats.atk, 100);
         assert_eq!(tanky_stats.hp, 400);
+    }
+
+    #[test]
+    fn team_generation_test() {
+        let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
+            setup(&CreatureGenerator::default());
+        for side in 0..2 {
+            for creature in &creatures[side] {
+                println!("{:?}", creature);
+            }
+        }
     }
 }
