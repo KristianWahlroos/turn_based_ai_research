@@ -2,6 +2,7 @@ use env_logger::{Env, Logger};
 use log::{debug, error, info, log_enabled, warn, Level};
 mod move_data;
 use move_data::*;
+use rand::rngs::ThreadRng;
 use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
