@@ -1297,6 +1297,36 @@ pub struct Stats {
     pub spe: i32,
 }
 
+/// Base stats' sum about 500 chosen for now
+pub enum GenerationMethod {
+    Average,
+    SpreadLow,
+    SpreadMed,
+    SpreadHigh,
+}
+
+impl GenerationMethod {
+    pub fn get_base_stat(&self) -> i32 {
+        match self {
+            GenerationMethod::Average => 83,
+            GenerationMethod::SpreadLow => rand::thread_rng().gen_range(73..=93),
+            GenerationMethod::SpreadMed => rand::thread_rng().gen_range(63..=103),
+            GenerationMethod::SpreadHigh => rand::thread_rng().gen_range(53..=113),
+        }
+    }
+
+    pub fn get_base_stats_with_sum(&self) -> ([i32; 6], i32) {
+        let mut base_stats = [0; 6];
+        let mut sum = 0;
+        for i in 0..6 {
+            let base_stat = self.get_base_stat();
+            sum += base_stat;
+            base_stats[i] = base_stat;
+        }
+        (base_stats, sum)
+    }
+}
+
 impl Stats {
     pub fn new(base_stats: [i32; 6], level: i32) -> Stats {
         Stats {
