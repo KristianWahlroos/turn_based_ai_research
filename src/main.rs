@@ -1273,9 +1273,9 @@ impl Type {
 pub struct Creature {
     pub species: String,
     pub level: i32,
-    pub moves: Vec<Move>,
+    pub moves: [Move; 4],
     pub stats: Stats,
-    pub types: Vec<Type>,
+    pub types: [Type; 2],
 }
 
 impl Creature {
