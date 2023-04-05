@@ -1297,6 +1297,17 @@ pub struct Stats {
     pub spe: i32,
 }
 
+impl Stats {
+    /// IV = 31
+    /// EV = floor(85/4) = 21
+    fn calculate_hp(base_stat: i32, level: i32) -> i32 {
+        (((2 * base_stat + 31 + 21) * level) / 100) + level + 10
+    }
+    fn calculate_stat(base_stat: i32, level: i32) -> i32 {
+        (((2 * base_stat + 31 + 21) * level) / 100) + 5
+    }
+}
+
 impl Default for Stats {
     fn default() -> Self {
         Stats {
