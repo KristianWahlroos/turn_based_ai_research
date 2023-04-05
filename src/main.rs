@@ -902,6 +902,31 @@ impl From<&str> for Type {
     }
 }
 
+impl From<i32> for Type {
+    fn from(item: i32) -> Self {
+        match item {
+            0 => Type::Normal,
+            1 => Type::Fighting,
+            2 => Type::Flying,
+            3 => Type::Poison,
+            4 => Type::Ground,
+            5 => Type::Rock,
+            6 => Type::Bug,
+            7 => Type::Ghost,
+            8 => Type::Steel,
+            9 => Type::Fire,
+            10 => Type::Water,
+            11 => Type::Grass,
+            12 => Type::Electric,
+            13 => Type::Psychic,
+            14 => Type::Ice,
+            15 => Type::Dragon,
+            16 => Type::Dark,
+            _ => unimplemented!("Type not implemented {}", item),
+        }
+    }
+}
+
 fn get_fainted_interrupt(any_faints: [bool; 2]) -> Option<Interrupt> {
     match any_faints {
         [true, true] => Some(Interrupt::BothFainted),
