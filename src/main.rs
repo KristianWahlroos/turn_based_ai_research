@@ -1563,4 +1563,11 @@ mod tests {
             ],
         ]
     }
+    #[test]
+    fn stat_generation_test() {
+        // get_slow_tank uses 146 base stat for hp and 28 for others. level is 88
+        let tanky_stats = Stats::get_slow_tank();
+        assert_eq!(tanky_stats.atk, 100);
+        assert_eq!(tanky_stats.hp, 400);
+    }
 }
