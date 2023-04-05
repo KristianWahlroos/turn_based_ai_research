@@ -856,7 +856,7 @@ impl From<Effectiviness> for f32 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Type {
     Normal,
     Fighting,
