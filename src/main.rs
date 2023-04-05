@@ -287,10 +287,10 @@ impl CombatAction {
 }
 
 enum Interrupt {
-    PlayerFainted,
-    EnemyFainted,
-    BothFainted,
-    Condition,
+    AFainted,
+    BFainted,
+    AWon,
+    BWon,
 }
 enum Roll {
     RandomRoll,
@@ -351,7 +351,7 @@ impl BattleInstance {
         creatures: &[[Creature; 6]; 2],
         creature_instances: &mut [[CreatureInstance; 6]; 2],
         combat_actions: &[CombatAction; 2],
-    ) {
+    ) -> Option<Interrupt> {
         let first_faster = self.is_first_faster(creatures, combat_actions);
         self.do_action(
             battle_settings,
@@ -371,20 +371,24 @@ impl BattleInstance {
                 combat_actions,
                 first_faster,
             );
-        } else {
-            // win check here as well
-            println!("hello!");
         }
         self.current_turn += 1;
 
-        // win check here as well
-
-        // weather check faster
-        // weather check slower
-        // forced switch faster
-        // forced switch slower
-
-        // win check now?
+        if creature_instances[0][self.battler_ids[0]].is_fainted() {
+            if has_team_fainted(creature_instances, 0) {
+                Some(Interrupt::BWon)
+            } else {
+                Some(Interrupt::AFainted)
+            }
+        } else if creature_instances[1][self.battler_ids[1]].is_fainted() {
+            if has_team_fainted(creature_instances, 1) {
+                Some(Interrupt::AWon)
+            } else {
+                Some(Interrupt::BFainted)
+            }
+        } else {
+            None
+        }
     }
 
     fn has_then_try_remove_value_volatile_status(
