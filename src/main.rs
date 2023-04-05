@@ -1298,6 +1298,40 @@ pub struct Stats {
 }
 
 impl Stats {
+    pub fn new(base_stats: [i32; 6], level: i32) -> Stats {
+        Stats {
+            hp: Stats::calculate_hp(base_stats[0], level),
+            atk: Stats::calculate_stat(base_stats[1], level),
+            def: Stats::calculate_stat(base_stats[2], level),
+            spa: Stats::calculate_stat(base_stats[3], level),
+            spd: Stats::calculate_stat(base_stats[4], level),
+            spe: Stats::calculate_stat(base_stats[5], level),
+        }
+    }
+
+    pub fn get_slow_tank() -> Stats {
+        let level = 88;
+        Stats {
+            hp: Stats::calculate_hp(146, level),
+            atk: Stats::calculate_stat(28, level),
+            def: Stats::calculate_stat(28, level),
+            spa: Stats::calculate_stat(28, level),
+            spd: Stats::calculate_stat(28, level),
+            spe: Stats::calculate_stat(28, level),
+        }
+    }
+    pub fn get_fast_tank() -> Stats {
+        let level = 88;
+        Stats {
+            hp: Stats::calculate_hp(146, level),
+            atk: Stats::calculate_stat(28, level),
+            def: Stats::calculate_stat(28, level),
+            spa: Stats::calculate_stat(28, level),
+            spd: Stats::calculate_stat(28, level),
+            spe: Stats::calculate_stat(146, level),
+        }
+    }
+
     /// IV = 31
     /// EV = floor(85/4) = 21
     fn calculate_hp(base_stat: i32, level: i32) -> i32 {
