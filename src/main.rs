@@ -242,7 +242,7 @@ pub fn calculate_damage(
 
 pub trait AI {
     fn get_action(&self) -> CombatAction;
-    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> usize;
+    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize;
 }
 
 pub struct RandomAI {}
@@ -252,10 +252,10 @@ impl AI for RandomAI {
         CombatAction::Attack(rand::random::<u8>() % 4)
     }
     /// Assumption that if all fainted we don't force switch
-    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> usize {
+    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
         loop {
             // TODO random ai doesn't strategizes, so for loop might be better
-            let switch_to = rand::random::<usize>() % 6;
+            let switch_to = rand::random::<usize>() % creature_instances.len();
             if !creature_instances[switch_to].is_fainted() {
                 return switch_to;
             }
@@ -263,7 +263,7 @@ impl AI for RandomAI {
     }
 }
 
-fn has_team_fainted(creature_instances: &[[CreatureInstance; 6]; 2], side: usize) -> bool {
+fn has_team_fainted(creature_instances: &[Vec<CreatureInstance>; 2], side: usize) -> bool {
     for instance in &creature_instances[side] {
         if !instance.is_fainted() {
             return false;
@@ -349,8 +349,8 @@ impl BattleInstance {
     pub fn turn(
         &mut self,
         battle_settings: &BattleSettings,
-        creatures: &[[Creature; 6]; 2],
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         combat_actions: &[CombatAction; 2],
     ) -> Option<Interrupt> {
         let first_faster = self.is_first_faster(creatures, combat_actions);
@@ -394,7 +394,7 @@ impl BattleInstance {
 
     fn handle_interrupts<AiA: AI, AiB: AI>(
         &mut self,
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         interrupt_opt: Option<Interrupt>,
         ai_a: &AiA,
         ai_b: &AiB,
@@ -461,8 +461,8 @@ impl BattleInstance {
     fn do_action(
         &mut self,
         battle_settings: &BattleSettings,
-        creatures: &[[Creature; 6]; 2],
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         combat_actions: &[CombatAction; 2],
         actioner: bool,
     ) {
@@ -481,7 +481,7 @@ impl BattleInstance {
     }
     fn get_move_id(
         &self,
-        creatures: &[[Creature; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
         move_id: usize,
         actioner: usize,
     ) -> MoveID {
@@ -491,7 +491,7 @@ impl BattleInstance {
     }
     fn switch(
         &mut self,
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         switch_to_id: usize,
         actioner: usize,
     ) {
@@ -505,7 +505,7 @@ impl BattleInstance {
 
     fn take_damage(
         &mut self,
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         damage_taker: usize,
         damage: i32,
     ) {
@@ -545,8 +545,8 @@ impl BattleInstance {
     fn use_move(
         &mut self,
         battle_settings: &BattleSettings,
-        creatures: &[[Creature; 6]; 2],
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         move_id: usize,
         actioner: bool,
     ) {
@@ -668,8 +668,8 @@ impl BattleInstance {
     fn attack(
         &mut self,
         battle_settings: &BattleSettings,
-        creatures: &[[Creature; 6]; 2],
-        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
         physical: bool,
         power: i32,
         level: i32,
@@ -749,7 +749,7 @@ impl BattleInstance {
     // TODO add volatile status checks
     fn is_first_faster(
         &self,
-        creatures: &[[Creature; 6]; 2],
+        creatures: &[Vec<Creature>; 2],
         combat_actions: &[CombatAction; 2],
     ) -> bool {
         let first_priority = match combat_actions[0] {
@@ -786,7 +786,7 @@ impl BattleInstance {
             false
         }
     }
-    fn get_battler<'a>(&'a self, side: usize, creatures: &'a [[Creature; 6]; 2]) -> &Creature {
+    fn get_battler<'a>(&'a self, side: usize, creatures: &'a [Vec<Creature>; 2]) -> &Creature {
         &creatures[side][self.battler_ids[side]]
     }
 }
@@ -1715,13 +1715,14 @@ mod tests {
 
     fn setup(
         creature_generator: &CreatureGenerator,
+        team_size: usize,
     ) -> (
-        [[CreatureInstance; 6]; 2],
-        [[Creature; 6]; 2],
+        [Vec<CreatureInstance>; 2],
+        [Vec<Creature>; 2],
         BattleInstance,
         BattleSettings,
     ) {
-        let creatures = get_team(creature_generator);
+        let creatures = get_team(creature_generator, team_size);
         (
             get_full_health_team(&creatures),
             creatures,
@@ -1730,70 +1731,29 @@ mod tests {
         )
     }
 
-    fn get_team(creature_generator: &CreatureGenerator) -> [[Creature; 6]; 2] {
-        [
-            [
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-            ],
-            [
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-                Creature::generate_creature(creature_generator),
-            ],
-        ]
+    fn get_team(creature_generator: &CreatureGenerator, size: usize) -> [Vec<Creature>; 2] {
+        let mut first_team = vec![];
+        let mut second_team = vec![];
+
+        for _ in 0..size {
+            first_team.push(Creature::generate_creature(creature_generator));
+            second_team.push(Creature::generate_creature(creature_generator));
+        }
+        [first_team, second_team]
     }
 
-    fn get_full_health_team(creatures: &[[Creature; 6]; 2]) -> [[CreatureInstance; 6]; 2] {
-        [
-            [
-                CreatureInstance {
-                    current_health: creatures[0][0].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[0][1].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[0][2].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[0][3].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[0][4].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[0][5].stats.hp,
-                },
-            ],
-            [
-                CreatureInstance {
-                    current_health: creatures[1][0].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[1][1].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[1][2].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[1][3].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[1][4].stats.hp,
-                },
-                CreatureInstance {
-                    current_health: creatures[1][5].stats.hp,
-                },
-            ],
-        ]
+    fn get_full_health_team(creatures: &[Vec<Creature>; 2]) -> [Vec<CreatureInstance>; 2] {
+        let mut first_team = vec![];
+        let mut second_team = vec![];
+        for i in 0..creatures[0].len() {
+            first_team.push(CreatureInstance {
+                current_health: creatures[0][i].stats.hp,
+            });
+            second_team.push(CreatureInstance {
+                current_health: creatures[1][i].stats.hp,
+            });
+        }
+        [first_team, second_team]
     }
 
     #[test]
