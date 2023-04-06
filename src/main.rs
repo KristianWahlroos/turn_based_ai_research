@@ -271,7 +271,7 @@ fn has_team_fainted(creature_instances: &[[CreatureInstance; 6]; 2], side: usize
     true
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum CombatAction {
     Attack(u8),
     Switch(u8),
@@ -285,8 +285,8 @@ impl CombatAction {
         }
     }
 }
-
-enum Interrupt {
+#[derive(Debug)]
+pub enum Interrupt {
     AFainted,
     BFainted,
     AWon,
@@ -856,7 +856,7 @@ impl From<Effectiviness> for f32 {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Type {
-    Normal,
+    Normal = 0,
     Fighting,
     Flying,
     Poison,
@@ -1309,7 +1309,7 @@ impl Creature {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CreatureInstance {
     pub current_health: i32,
 }
