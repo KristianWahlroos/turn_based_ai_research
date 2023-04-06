@@ -241,22 +241,23 @@ pub fn calculate_damage(
 }
 
 pub trait AI {
-    fn get_action(&self, move_count: u8) -> CombatAction;
-    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> CombatAction;
+    fn get_action(&self) -> CombatAction;
+    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> usize;
 }
 
 pub struct RandomAI {}
 
 impl AI for RandomAI {
-    fn get_action(&self, move_count: u8) -> CombatAction {
-        CombatAction::Attack(rand::random::<u8>() % move_count)
+    fn get_action(&self) -> CombatAction {
+        CombatAction::Attack(rand::random::<u8>() % 4)
     }
     /// Assumption that if all fainted we don't force switch
-    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> CombatAction {
+    fn get_forced_switch(&self, creature_instances: &[CreatureInstance; 6]) -> usize {
         loop {
-            let switch_to = rand::random::<usize>() % 5;
+            // TODO random ai doesn't strategizes, so for loop might be better
+            let switch_to = rand::random::<usize>() % 6;
             if !creature_instances[switch_to].is_fainted() {
-                return CombatAction::Switch(switch_to as u8);
+                return switch_to;
             }
         }
     }
@@ -389,6 +390,31 @@ impl BattleInstance {
         } else {
             None
         }
+    }
+
+    fn handle_interrupts<AiA: AI, AiB: AI>(
+        &mut self,
+        creature_instances: &mut [[CreatureInstance; 6]; 2],
+        interrupt_opt: Option<Interrupt>,
+        ai_a: &AiA,
+        ai_b: &AiB,
+    ) -> Result<(), Interrupt> {
+        Ok(match interrupt_opt {
+            Some(Interrupt::AFainted) => self.switch(
+                creature_instances,
+                ai_a.get_forced_switch(&creature_instances[0]),
+                0,
+            ),
+            Some(Interrupt::BFainted) => self.switch(
+                creature_instances,
+                ai_b.get_forced_switch(&creature_instances[1]),
+                1,
+            ),
+            Some(Interrupt::AWon) | Some(Interrupt::BWon) => {
+                return Err(interrupt_opt.unwrap());
+            }
+            None => (),
+        })
     }
 
     fn has_then_try_remove_value_volatile_status(
