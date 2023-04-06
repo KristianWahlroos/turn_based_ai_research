@@ -1711,6 +1711,10 @@ impl From<i32> for VolatileStatus {
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
+    use rand::random;
+
     use super::*;
 
     fn setup(
@@ -1786,12 +1790,448 @@ mod tests {
 
     #[test]
     fn team_generation_test() {
-        let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
-            setup(&CreatureGenerator::default());
-        for side in 0..2 {
-            for creature in &creatures[side] {
-                println!("{:?}", creature);
+        let mut average_turns = 0;
+        let mut type_won = [0i32; 17];
+        let mut type_lost = [0i32; 17];
+        let mut won_with_specific_volatile_status = [0i32; 8];
+        let mut lost_with_specific_volatile_status = [0i32; 8];
+        let mut won_with_specific_base_move = [0i32; 10];
+        let mut lost_with_specific_base_move = [0i32; 10];
+        let mut turns_alive_for_type = [0i32; 17];
+        let mut won_with_non_stab_type_move = [0i32; 17];
+        let mut lost_with_non_stab_type_move = [0i32; 17];
+        let mut won_level_distribution = [0i32; 10];
+        let mut lost_level_distribution = [0i32; 10];
+        for i in 0..100000 {
+            let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
+                setup(&CreatureGenerator::default(), 3);
+            let random_ai_a = RandomAI {};
+            let random_ai_b = RandomAI {};
+            let mut combat_action_1 = random_ai_a.get_action();
+            let mut combat_action_2 = random_ai_b.get_action();
+            for i in 0..1000 {
+                for side in 0..2 {
+                    turns_alive_for_type
+                        [creatures[side][battle_instance.battler_ids[side]].types[0] as usize] += 1;
+                }
+                let interrupt_opt = battle_instance.turn(
+                    &battle_settings,
+                    &creatures,
+                    &mut creature_instances,
+                    &[combat_action_1.clone(), combat_action_2.clone()],
+                );
+                match battle_instance.handle_interrupts(
+                    &mut creature_instances,
+                    interrupt_opt,
+                    &random_ai_a,
+                    &random_ai_b,
+                ) {
+                    Ok(_) => (),
+                    Err(interrupt) => {
+                        match interrupt {
+                            Interrupt::AWon => {
+                                for creature in &creatures[0] {
+                                    for i in 0..creature.types.len() {
+                                        type_won[creature.types[i] as usize] += 1;
+                                        won_level_distribution[creature.level as usize - 80] += 1;
+                                        for a_move in &creature.moves {
+                                            won_with_specific_base_move
+                                                [a_move.id.get_as_index()] += 1;
+                                            match a_move.id.get_volatile_status() {
+                                                Some(volatile_status) => {
+                                                    won_with_specific_volatile_status
+                                                        [volatile_status as usize] += 1
+                                                }
+                                                None => (),
+                                            }
+                                            if creature.types[i] != (*a_move).move_type {
+                                                won_with_non_stab_type_move
+                                                    [(*a_move).move_type as usize] += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                                for creature in &creatures[1] {
+                                    for i in 0..creature.types.len() {
+                                        lost_level_distribution[creature.level as usize - 80] += 1;
+                                        type_lost[creature.types[i] as usize] += 1;
+                                        for a_move in &creature.moves {
+                                            lost_with_specific_base_move
+                                                [a_move.id.get_as_index()] += 1;
+                                            match a_move.id.get_volatile_status() {
+                                                Some(volatile_status) => {
+                                                    lost_with_specific_volatile_status
+                                                        [volatile_status as usize] += 1
+                                                }
+                                                None => (),
+                                            }
+                                            if creature.types[i] != (*a_move).move_type {
+                                                lost_with_non_stab_type_move
+                                                    [(*a_move).move_type as usize] += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Interrupt::BWon => {
+                                for creature in &creatures[1] {
+                                    for i in 0..creature.types.len() {
+                                        won_level_distribution[creature.level as usize - 80] += 1;
+                                        type_won[creature.types[i] as usize] += 1;
+                                        for a_move in &creature.moves {
+                                            won_with_specific_base_move
+                                                [a_move.id.get_as_index()] += 1;
+                                            match a_move.id.get_volatile_status() {
+                                                Some(volatile_status) => {
+                                                    won_with_specific_volatile_status
+                                                        [volatile_status as usize] += 1
+                                                }
+                                                None => (),
+                                            }
+                                            if creature.types[i] != (*a_move).move_type {
+                                                won_with_non_stab_type_move
+                                                    [(*a_move).move_type as usize] += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                                for creature in &creatures[0] {
+                                    for i in 0..creature.types.len() {
+                                        lost_level_distribution[creature.level as usize - 80] += 1;
+                                        type_lost[creature.types[i] as usize] += 1;
+                                        for a_move in &creature.moves {
+                                            lost_with_specific_base_move
+                                                [a_move.id.get_as_index()] += 1;
+                                            match a_move.id.get_volatile_status() {
+                                                Some(volatile_status) => {
+                                                    lost_with_specific_volatile_status
+                                                        [volatile_status as usize] += 1
+                                                }
+                                                None => (),
+                                            }
+                                            if creature.types[i] != (*a_move).move_type {
+                                                lost_with_non_stab_type_move
+                                                    [(*a_move).move_type as usize] += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => panic!("faints should be handled in handle_interrupts"),
+                        }
+                        average_turns += i + 1;
+                        break;
+                    }
+                }
+                combat_action_1 = random_ai_a.get_action();
+                combat_action_2 = random_ai_b.get_action();
             }
         }
+        println!(
+            "
+        Normal won: {}
+        Fighting won: {}
+        Flying won: {}
+        Poison won: {}
+        Ground won: {}
+        Rock won: {}
+        Bug won: {}
+        Ghost won: {}
+        Steel won: {}
+        Fire won: {}
+        Water won: {}
+        Grass won: {}
+        Electric won: {}
+        Psychic won: {}
+        Ice won: {}
+        Dragon won: {}
+        Dark won: {}
+        Normal lost: {}
+        Fighting lost: {}
+        Flying lost: {}
+        Poison lost: {}
+        Ground lost: {}
+        Rock lost: {}
+        Bug lost: {}
+        Ghost lost: {}
+        Steel lost: {}
+        Fire lost: {}
+        Water lost: {}
+        Grass lost: {}
+        Electric lost: {}
+        Psychic lost: {}
+        Ice lost: {}
+        Dragon lost: {}
+        Dark lost: {}
+        ",
+            type_won[0],
+            type_won[1],
+            type_won[2],
+            type_won[3],
+            type_won[4],
+            type_won[5],
+            type_won[6],
+            type_won[7],
+            type_won[8],
+            type_won[9],
+            type_won[10],
+            type_won[11],
+            type_won[12],
+            type_won[13],
+            type_won[14],
+            type_won[15],
+            type_won[16],
+            type_lost[0],
+            type_lost[1],
+            type_lost[2],
+            type_lost[3],
+            type_lost[4],
+            type_lost[5],
+            type_lost[6],
+            type_lost[7],
+            type_lost[8],
+            type_lost[9],
+            type_lost[10],
+            type_lost[11],
+            type_lost[12],
+            type_lost[13],
+            type_lost[14],
+            type_lost[15],
+            type_lost[16],
+        );
+        println!(
+            "
+        Normal winrate: {}%
+        Fighting winrate: {}%
+        Flying winrate: {}%
+        Poison winrate: {}%
+        Ground winrate: {}%
+        Rock winrate: {}%
+        Bug winrate: {}%
+        Ghost winrate: {}%
+        Steel winrate: {}%
+        Fire winrate: {}%
+        Water winrate: {}%
+        Grass winrate: {}%
+        Electric winrate: {}%
+        Psychic winrate: {}%
+        Ice winrate: {}%
+        Dragon winrate: {}%
+        Dark winrate: {}%",
+            100.0 * type_won[0] as f32 / (type_won[0] + type_lost[0]) as f32,
+            100.0 * type_won[1] as f32 / (type_won[1] + type_lost[1]) as f32,
+            100.0 * type_won[2] as f32 / (type_won[2] + type_lost[2]) as f32,
+            100.0 * type_won[3] as f32 / (type_won[3] + type_lost[3]) as f32,
+            100.0 * type_won[4] as f32 / (type_won[4] + type_lost[4]) as f32,
+            100.0 * type_won[5] as f32 / (type_won[5] + type_lost[5]) as f32,
+            100.0 * type_won[6] as f32 / (type_won[6] + type_lost[6]) as f32,
+            100.0 * type_won[7] as f32 / (type_won[7] + type_lost[7]) as f32,
+            100.0 * type_won[8] as f32 / (type_won[8] + type_lost[8]) as f32,
+            100.0 * type_won[9] as f32 / (type_won[9] + type_lost[9]) as f32,
+            100.0 * type_won[10] as f32 / (type_won[10] + type_lost[10]) as f32,
+            100.0 * type_won[11] as f32 / (type_won[11] + type_lost[11]) as f32,
+            100.0 * type_won[12] as f32 / (type_won[12] + type_lost[12]) as f32,
+            100.0 * type_won[13] as f32 / (type_won[13] + type_lost[13]) as f32,
+            100.0 * type_won[14] as f32 / (type_won[14] + type_lost[14]) as f32,
+            100.0 * type_won[15] as f32 / (type_won[15] + type_lost[15]) as f32,
+            100.0 * type_won[16] as f32 / (type_won[16] + type_lost[16]) as f32,
+        );
+        println!(
+            "
+        Normal non-STAB move's winrate: {}%
+        Fighting non-STAB move's winrate: {}%
+        Flying non-STAB move's winrate: {}%
+        Poison non-STAB move's winrate: {}%
+        Ground non-STAB move's winrate: {}%
+        Rock non-STAB move's winrate: {}%
+        Bug non-STAB move's winrate: {}%
+        Ghost non-STAB move's winrate: {}%
+        Steel non-STAB move's winrate: {}%
+        Fire non-STAB move's winrate: {}%
+        Water non-STAB move's winrate: {}%
+        Grass non-STAB move's winrate: {}%
+        Electric non-STAB move's winrate: {}%
+        Psychic non-STAB move's winrate: {}%
+        Ice non-STAB move's winrate: {}%
+        Dragon non-STAB move's winrate: {}%
+        Dark non-STAB move's winrate: {}%",
+            100.0 * won_with_non_stab_type_move[0] as f32
+                / (won_with_non_stab_type_move[0] + lost_with_non_stab_type_move[0]) as f32,
+            100.0 * won_with_non_stab_type_move[1] as f32
+                / (won_with_non_stab_type_move[1] + lost_with_non_stab_type_move[1]) as f32,
+            100.0 * won_with_non_stab_type_move[2] as f32
+                / (won_with_non_stab_type_move[2] + lost_with_non_stab_type_move[2]) as f32,
+            100.0 * won_with_non_stab_type_move[3] as f32
+                / (won_with_non_stab_type_move[3] + lost_with_non_stab_type_move[3]) as f32,
+            100.0 * won_with_non_stab_type_move[4] as f32
+                / (won_with_non_stab_type_move[4] + lost_with_non_stab_type_move[4]) as f32,
+            100.0 * won_with_non_stab_type_move[5] as f32
+                / (won_with_non_stab_type_move[5] + lost_with_non_stab_type_move[5]) as f32,
+            100.0 * won_with_non_stab_type_move[6] as f32
+                / (won_with_non_stab_type_move[6] + lost_with_non_stab_type_move[6]) as f32,
+            100.0 * won_with_non_stab_type_move[7] as f32
+                / (won_with_non_stab_type_move[7] + lost_with_non_stab_type_move[7]) as f32,
+            100.0 * won_with_non_stab_type_move[8] as f32
+                / (won_with_non_stab_type_move[8] + lost_with_non_stab_type_move[8]) as f32,
+            100.0 * won_with_non_stab_type_move[9] as f32
+                / (won_with_non_stab_type_move[9] + lost_with_non_stab_type_move[9]) as f32,
+            100.0 * won_with_non_stab_type_move[10] as f32
+                / (won_with_non_stab_type_move[10] + lost_with_non_stab_type_move[10]) as f32,
+            100.0 * won_with_non_stab_type_move[11] as f32
+                / (won_with_non_stab_type_move[11] + lost_with_non_stab_type_move[11]) as f32,
+            100.0 * won_with_non_stab_type_move[12] as f32
+                / (won_with_non_stab_type_move[12] + lost_with_non_stab_type_move[12]) as f32,
+            100.0 * won_with_non_stab_type_move[13] as f32
+                / (won_with_non_stab_type_move[13] + lost_with_non_stab_type_move[13]) as f32,
+            100.0 * won_with_non_stab_type_move[14] as f32
+                / (won_with_non_stab_type_move[14] + lost_with_non_stab_type_move[14]) as f32,
+            100.0 * won_with_non_stab_type_move[15] as f32
+                / (won_with_non_stab_type_move[15] + lost_with_non_stab_type_move[15]) as f32,
+            100.0 * won_with_non_stab_type_move[16] as f32
+                / (won_with_non_stab_type_move[16] + lost_with_non_stab_type_move[16]) as f32,
+        );
+        println!(
+            "
+        Normal's average lifespan: {}
+        Fighting's average lifespan: {}
+        Flying's average lifespan: {}
+        Poison's average lifespan: {}
+        Ground's average lifespan: {}
+        Rock's average lifespan: {}
+        Bug's average lifespan: {}
+        Ghost's average lifespan: {}
+        Steel's average lifespan: {}
+        Fire's average lifespan: {}
+        Water's average lifespan: {}
+        Grass's average lifespan: {}
+        Electric's average lifespan: {}
+        Psychic's average lifespan: {}
+        Ice's average lifespan: {}
+        Dragon's average lifespan: {}
+        Dark's average lifespan: {}
+        ",
+            turns_alive_for_type[0] as f32 / (type_won[0] as f32 + type_lost[0] as f32),
+            turns_alive_for_type[1] as f32 / (type_won[1] as f32 + type_lost[1] as f32),
+            turns_alive_for_type[2] as f32 / (type_won[2] as f32 + type_lost[2] as f32),
+            turns_alive_for_type[3] as f32 / (type_won[3] as f32 + type_lost[3] as f32),
+            turns_alive_for_type[4] as f32 / (type_won[4] as f32 + type_lost[4] as f32),
+            turns_alive_for_type[5] as f32 / (type_won[5] as f32 + type_lost[5] as f32),
+            turns_alive_for_type[6] as f32 / (type_won[6] as f32 + type_lost[6] as f32),
+            turns_alive_for_type[7] as f32 / (type_won[7] as f32 + type_lost[7] as f32),
+            turns_alive_for_type[8] as f32 / (type_won[8] as f32 + type_lost[8] as f32),
+            turns_alive_for_type[9] as f32 / (type_won[9] as f32 + type_lost[9] as f32),
+            turns_alive_for_type[10] as f32 / (type_won[10] as f32 + type_lost[10] as f32),
+            turns_alive_for_type[11] as f32 / (type_won[11] as f32 + type_lost[11] as f32),
+            turns_alive_for_type[12] as f32 / (type_won[12] as f32 + type_lost[12] as f32),
+            turns_alive_for_type[13] as f32 / (type_won[13] as f32 + type_lost[13] as f32),
+            turns_alive_for_type[14] as f32 / (type_won[14] as f32 + type_lost[14] as f32),
+            turns_alive_for_type[15] as f32 / (type_won[15] as f32 + type_lost[15] as f32),
+            turns_alive_for_type[16] as f32 / (type_won[16] as f32 + type_lost[16] as f32),
+        );
+        println!("average turns: {}", average_turns as f32 / 100000.0);
+
+        println!(
+            "
+        DamageLow's winrate: {}%
+        DamageMed's winrate: {}%
+        DamageHigh's winrate: {}%
+        MissLow's winrate: {}%
+        MissMed's winrate: {}%
+        MissHigh's winrate: {}%
+        StatsUp's winrate: {}%
+        StatsUpDouble's winrate: {}%
+        StatsDown's winrate: {}%
+        StatsDownDouble's winrate: {}%
+        ",
+            100.0 * won_with_specific_base_move[0] as f32
+                / (lost_with_specific_base_move[0] as f32 + won_with_specific_base_move[0] as f32),
+            100.0 * won_with_specific_base_move[1] as f32
+                / (lost_with_specific_base_move[1] as f32 + won_with_specific_base_move[1] as f32),
+            100.0 * won_with_specific_base_move[2] as f32
+                / (lost_with_specific_base_move[2] as f32 + won_with_specific_base_move[2] as f32),
+            100.0 * won_with_specific_base_move[3] as f32
+                / (lost_with_specific_base_move[3] as f32 + won_with_specific_base_move[3] as f32),
+            100.0 * won_with_specific_base_move[4] as f32
+                / (lost_with_specific_base_move[4] as f32 + won_with_specific_base_move[4] as f32),
+            100.0 * won_with_specific_base_move[5] as f32
+                / (lost_with_specific_base_move[5] as f32 + won_with_specific_base_move[5] as f32),
+            100.0 * won_with_specific_base_move[6] as f32
+                / (lost_with_specific_base_move[6] as f32 + won_with_specific_base_move[6] as f32),
+            100.0 * won_with_specific_base_move[7] as f32
+                / (lost_with_specific_base_move[7] as f32 + won_with_specific_base_move[7] as f32),
+            100.0 * won_with_specific_base_move[8] as f32
+                / (lost_with_specific_base_move[8] as f32 + won_with_specific_base_move[8] as f32),
+            100.0 * won_with_specific_base_move[9] as f32
+                / (lost_with_specific_base_move[9] as f32 + won_with_specific_base_move[9] as f32),
+        );
+        println!(
+            "
+        stat modifier's AtkStage winrate: {}%
+        stat modifier's DefStage winrate: {}%
+        stat modifier's SpaStage winrate: {}%
+        stat modifier's SpdStage winrate: {}%
+        stat modifier's SpeStage winrate: {}%
+        stat modifier's EvaStage winrate: {}%
+        stat modifier's AccStage winrate: {}%
+        stat modifier's CrtStage winrate: {}%
+    ",
+            100.0 * won_with_specific_volatile_status[0] as f32
+                / (lost_with_specific_volatile_status[0] as f32
+                    + won_with_specific_volatile_status[0] as f32),
+            100.0 * won_with_specific_volatile_status[1] as f32
+                / (lost_with_specific_volatile_status[1] as f32
+                    + won_with_specific_volatile_status[1] as f32),
+            100.0 * won_with_specific_volatile_status[2] as f32
+                / (lost_with_specific_volatile_status[2] as f32
+                    + won_with_specific_volatile_status[2] as f32),
+            100.0 * won_with_specific_volatile_status[3] as f32
+                / (lost_with_specific_volatile_status[3] as f32
+                    + won_with_specific_volatile_status[3] as f32),
+            100.0 * won_with_specific_volatile_status[4] as f32
+                / (lost_with_specific_volatile_status[4] as f32
+                    + won_with_specific_volatile_status[4] as f32),
+            100.0 * won_with_specific_volatile_status[5] as f32
+                / (lost_with_specific_volatile_status[5] as f32
+                    + won_with_specific_volatile_status[5] as f32),
+            100.0 * won_with_specific_volatile_status[6] as f32
+                / (lost_with_specific_volatile_status[6] as f32
+                    + won_with_specific_volatile_status[6] as f32),
+            100.0 * won_with_specific_volatile_status[7] as f32
+                / (lost_with_specific_volatile_status[7] as f32
+                    + won_with_specific_volatile_status[7] as f32),
+        );
+        println!(
+            "winrate by level:
+            level 80 {}%,
+             level 81 {}%,
+              level 82 {}%,
+               level 83 {}%,
+                level 84 {}%,
+                 level 85 {}%,
+                  level 86 {}%,
+                   level 87 {}%,
+                    level 88 {}%,
+                     level 89 {}%",
+            100.0 * won_level_distribution[0] as f32
+                / (won_level_distribution[0] + lost_level_distribution[0]) as f32,
+            100.0 * won_level_distribution[1] as f32
+                / (won_level_distribution[1] + lost_level_distribution[1]) as f32,
+            100.0 * won_level_distribution[2] as f32
+                / (won_level_distribution[2] + lost_level_distribution[2]) as f32,
+            100.0 * won_level_distribution[3] as f32
+                / (won_level_distribution[3] + lost_level_distribution[3]) as f32,
+            100.0 * won_level_distribution[4] as f32
+                / (won_level_distribution[4] + lost_level_distribution[4]) as f32,
+            100.0 * won_level_distribution[5] as f32
+                / (won_level_distribution[5] + lost_level_distribution[5]) as f32,
+            100.0 * won_level_distribution[6] as f32
+                / (won_level_distribution[6] + lost_level_distribution[6]) as f32,
+            100.0 * won_level_distribution[7] as f32
+                / (won_level_distribution[7] + lost_level_distribution[7]) as f32,
+            100.0 * won_level_distribution[8] as f32
+                / (won_level_distribution[8] + lost_level_distribution[8]) as f32,
+            100.0 * won_level_distribution[9] as f32
+                / (won_level_distribution[9] + lost_level_distribution[9]) as f32,
+        )
     }
 }
