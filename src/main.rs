@@ -1383,9 +1383,9 @@ impl LevelGeneration {
     }
 
     fn get_balanced_level(base_stat_sum: i32, min_value: i32, increment: i32) -> i32 {
-        let value = (base_stat_sum - (min_value * 6)) / increment;
+        let value = 9 - ((base_stat_sum - (min_value * 6)) / increment);
         80 + if base_stat_sum - (min_value * 6) == increment * 10 {
-            9 // perfect base_stats are moved to one category lower
+            0 // perfect base_stats are moved to one category lower
         } else {
             value
         }
@@ -1763,7 +1763,7 @@ mod tests {
             for j in 0..36 {
                 highest_value_tested = 318 + j + i * 36;
                 assert_eq!(
-                    80 + i,
+                    89 - i,
                     LevelGeneration::get_balanced_level(highest_value_tested, 53, 36),
                     "i: {} and j: {} and highest_value_tested: {}",
                     i,
@@ -1773,7 +1773,7 @@ mod tests {
             }
         }
         assert_eq!(highest_value_tested, 677);
-        assert_eq!(89, LevelGeneration::get_balanced_level(678, 53, 36));
+        assert_eq!(80, LevelGeneration::get_balanced_level(678, 53, 36));
     }
 
     #[test]
