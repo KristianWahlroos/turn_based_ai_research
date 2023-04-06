@@ -1436,6 +1436,15 @@ impl Default for CreatureGenerator {
         }
     }
 }
+impl CreatureGenerator {
+    fn no_random() -> Self {
+        CreatureGenerator {
+            move_generation_settings: MoveGenerationSettings::new(0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0),
+            base_stats_generation: BaseStatsGeneration::Average,
+            level_generation: LevelGeneration::Only88,
+        }
+    }
+}
 
 /// TODOS:
 /// Currently always two stab moves
