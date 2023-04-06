@@ -31,21 +31,6 @@ impl From<&MoveID> for Move {
                     continues_previous_unit: false,
                 }],
             },
-            MoveID::StatsUp(stat) => Move {
-                id: MoveID::StatsUp(stat.clone()),
-                move_type: Type::Normal,
-                chance_of_success: None,
-                pp: 30,
-                priority: 0,
-                units: vec![MoveUnit {
-                    chance_of_success: 1.0,
-                    power: Some(1),
-                    effect: Effect::ValueVolatileStatusChange(stat.clone()),
-                    needs_target: false,
-                    target_self: true,
-                    continues_previous_unit: false,
-                }],
-            },
             MoveID::StatsUpDouble(stat) => Move {
                 id: MoveID::StatsUpDouble(stat.clone()),
                 move_type: Type::Normal,
