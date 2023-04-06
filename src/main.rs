@@ -1476,6 +1476,34 @@ impl Default for MoveGenerationSettings {
 }
 
 impl MoveGenerationSettings {
+    pub fn new(
+        low_attack_ratio: i32,
+        med_attack_ratio: i32,
+        high_attack_ratio: i32,
+        attack_ratio: i32,
+        stats_mod_chance: i32,
+        one_step_stat_ratio: i32,
+        two_step_stat_ratio: i32,
+        buff_ratio: i32,
+        debuff_ratio: i32,
+        always_hit_ratio: i32,
+        missable_ratio: i32,
+    ) -> Self {
+        MoveGenerationSettings {
+            low_attack_ratio,
+            med_attack_ratio,
+            high_attack_ratio,
+            attack_ratio,
+            stats_mod_chance,
+            one_step_stat_ratio,
+            two_step_stat_ratio,
+            buff_ratio,
+            debuff_ratio,
+            always_hit_ratio,
+            missable_ratio,
+        }
+    }
+
     /// for attacks: 17 types * 2 effects * 6 different base moves = 204
     /// for stat modifiers:
     pub fn generate_move_set(&self, types: [Type; 2]) -> [Move; 4] {
