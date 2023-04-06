@@ -1289,7 +1289,7 @@ pub struct Creature {
     pub level: i32,
     pub moves: [Move; 4],
     pub stats: Stats,
-    pub types: [Type; 2],
+    pub types: Vec<Type>,
 }
 
 impl Creature {
@@ -1310,10 +1310,11 @@ impl Creature {
             .get_base_stats_with_sum();
         let level = creature_generator.level_generation.get_level(sum);
         let stats = Stats::new(base_stats, level);
-        let types = get_dual_types(&mut rand::thread_rng());
+        let types =
+            get_creature_types(creature_generator.dual_type_chance, &mut rand::thread_rng());
         let moves = creature_generator
             .move_generation_settings
-            .generate_move_set(types);
+            .generate_move_set(&mut types.clone());
 
         // let level = creature_generator.
         Creature {
@@ -1425,6 +1426,7 @@ pub struct CreatureGenerator {
     pub move_generation_settings: MoveGenerationSettings,
     pub base_stats_generation: BaseStatsGeneration,
     pub level_generation: LevelGeneration,
+    pub dual_type_chance: f64, // Adding Type Generations enable custom type chances
 }
 
 impl Default for CreatureGenerator {
@@ -1433,6 +1435,7 @@ impl Default for CreatureGenerator {
             move_generation_settings: MoveGenerationSettings::default(),
             base_stats_generation: BaseStatsGeneration::SpreadHigh,
             level_generation: LevelGeneration::From80To89BalancedLinearyHighRange,
+            dual_type_chance: 0.9,
         }
     }
 }
@@ -1442,6 +1445,7 @@ impl CreatureGenerator {
             move_generation_settings: MoveGenerationSettings::new(0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0),
             base_stats_generation: BaseStatsGeneration::Average,
             level_generation: LevelGeneration::Only88,
+            dual_type_chance: 0.0,
         }
     }
 }
@@ -1515,14 +1519,13 @@ impl MoveGenerationSettings {
 
     /// for attacks: 17 types * 2 effects * 6 different base moves = 204
     /// for stat modifiers:
-    pub fn generate_move_set(&self, types: [Type; 2]) -> [Move; 4] {
+    pub fn generate_move_set(&self, types_used: &mut Vec<Type>) -> [Move; 4] {
         let mut rng = rand::thread_rng();
         let mut moves = vec![];
-        let mut types_used = vec![types[0], types[1]];
-        for i in 0..2 {
-            moves.push(self.get_base_attack(&mut rng, types[i]));
+        for i in 0..types_used.len() {
+            moves.push(self.get_base_attack(&mut rng, types_used[i]));
         }
-        for _ in 0..2 {
+        for _ in 0..(4 - types_used.len()) {
             let is_attack_value = rng.gen_range(0..(self.attack_ratio + self.stats_mod_chance));
             if is_attack_value < self.attack_ratio {
                 let new_type = MoveGenerationSettings::get_new_type(&mut rng, &types_used);
@@ -1606,12 +1609,16 @@ impl MoveGenerationSettings {
     }
 }
 
-pub fn get_dual_types(rng: &mut ThreadRng) -> [Type; 2] {
-    let first_type = rng.gen_range(0..17);
+pub fn get_creature_types(dual_type_chance: f64, rng: &mut ThreadRng) -> Vec<Type> {
+    let mut types = vec![Type::from(rng.gen_range(0..17))];
+    if dual_type_chance == 0.0 || !rng.gen_bool(dual_type_chance) {
+        return types;
+    }
     loop {
-        let second_type = rng.gen_range(0..17);
-        if first_type != second_type {
-            return [Type::from(first_type), Type::from(second_type)];
+        let second_type = Type::from(rng.gen_range(0..17));
+        if types[0] != second_type {
+            types.push(second_type);
+            return types;
         }
     }
 }
