@@ -1683,7 +1683,7 @@ impl Default for Stats {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum VolatileStatus {
-    AtkStage,
+    AtkStage = 0,
     DefStage,
     SpaStage,
     SpdStage,

@@ -13,6 +13,33 @@ pub enum MoveID {
     StatsDownDouble(VolatileStatus),
 }
 
+impl MoveID {
+    pub fn get_as_index(&self) -> usize {
+        match self {
+            MoveID::DamageLow(_, _) => 0,
+            MoveID::DamageMed(_, _) => 1,
+            MoveID::DamageHigh(_, _) => 2,
+            MoveID::MissLow(_, _) => 3,
+            MoveID::MissMed(_, _) => 4,
+            MoveID::MissHigh(_, _) => 5,
+            MoveID::StatsUp(_) => 6,
+            MoveID::StatsUpDouble(_) => 7,
+            MoveID::StatsDown(_) => 8,
+            MoveID::StatsDownDouble(_) => 9,
+        }
+    }
+
+    pub fn get_volatile_status(&self) -> Option<VolatileStatus> {
+        match self {
+            MoveID::StatsUp(volatile_status)
+            | MoveID::StatsUpDouble(volatile_status)
+            | MoveID::StatsDown(volatile_status)
+            | MoveID::StatsDownDouble(volatile_status) => Some(volatile_status.clone()),
+            _ => None,
+        }
+    }
+}
+
 impl From<&MoveID> for Move {
     fn from(item: &MoveID) -> Self {
         match item {
