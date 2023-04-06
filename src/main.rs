@@ -1567,8 +1567,6 @@ impl MoveGenerationSettings {
             }
             if !duplicate {
                 return new_type;
-            } else {
-                println!("Duplicate found");
             }
         }
     }
@@ -1605,8 +1603,6 @@ pub fn get_dual_types(rng: &mut ThreadRng) -> [Type; 2] {
         let second_type = rng.gen_range(0..17);
         if first_type != second_type {
             return [Type::from(first_type), Type::from(second_type)];
-        } else {
-            println!("Duplicate when creating types cool");
         }
     }
 }
