@@ -665,46 +665,42 @@ impl BattleInstance {
         true
     }
 
-    fn attack(
-        &mut self,
+    fn attack_damage(
+        &self,
         battle_settings: &BattleSettings,
-        creatures: &[Vec<Creature>; 2],
-        creature_instances: &mut [Vec<CreatureInstance>; 2],
+        attacker: &Creature,
+        damage_taker: &Creature,
+        attacker_side: usize,
+        damage_taker_side: usize,
         physical: bool,
         power: i32,
         level: i32,
         attack_type: &Type,
-        attacker: usize,
-        damage_taker: usize,
         base_hit_chance: f32,
-    ) -> bool {
+    ) -> i32 {
         let (attack, defense, attack_stage, defense_stage) = if physical {
             (
-                creatures[attacker][self.battler_ids[attacker]].stats.atk,
-                creatures[damage_taker][self.battler_ids[damage_taker]]
-                    .stats
-                    .def,
-                self.get_stage_from_value_volatile_status(attacker, VolatileStatus::AtkStage),
-                self.get_stage_from_value_volatile_status(damage_taker, VolatileStatus::DefStage),
+                attacker.stats.atk,
+                damage_taker.stats.def,
+                self.get_stage_from_value_volatile_status(attacker_side, VolatileStatus::AtkStage),
+                self.get_stage_from_value_volatile_status(
+                    damage_taker_side,
+                    VolatileStatus::DefStage,
+                ),
             )
         } else {
             (
-                creatures[attacker][self.battler_ids[attacker]].stats.spa,
-                creatures[damage_taker][self.battler_ids[damage_taker]]
-                    .stats
-                    .spd,
+                attacker.stats.spa,
+                damage_taker.stats.spd,
+                self.get_stage_from_value_volatile_status(attacker_side, VolatileStatus::SpaStage),
                 self.get_stage_from_value_volatile_status(
-                    attacker as usize,
-                    VolatileStatus::SpaStage,
-                ),
-                self.get_stage_from_value_volatile_status(
-                    damage_taker as usize,
+                    damage_taker_side,
                     VolatileStatus::SpdStage,
                 ),
             )
         };
         let crit_stage =
-            self.get_stage_from_value_volatile_status(attacker, VolatileStatus::CrtStage);
+            self.get_stage_from_value_volatile_status(attacker_side, VolatileStatus::CrtStage);
         let crit_chance = get_crit_chance(crit_stage);
         let (is_crit, bonus_crit_power) = if battle_settings.crit_enabled {
             if rand::random::<f32>() < crit_chance {
@@ -725,12 +721,10 @@ impl BattleInstance {
             Roll::HighRoll => 1.0,
             Roll::AverageRoll => 0.925,
         } * bonus_power;
-        let stab_bonus =
-            creatures[attacker][self.battler_ids[attacker]].get_stab_modifier(attack_type);
-        let type_effectiviness = creatures[damage_taker][self.battler_ids[damage_taker]]
-            .effectiviness_when_attacked(attack_type);
+        let stab_bonus = attacker.get_stab_modifier(attack_type);
+        let type_effectiviness = damage_taker.effectiviness_when_attacked(attack_type);
 
-        let damage = calculate_damage(
+        calculate_damage(
             power,
             attack,
             defense,
@@ -741,7 +735,34 @@ impl BattleInstance {
             type_effectiviness.clone().into(),
             chance_bonuses,
             is_crit,
-        ) as i32;
+        ) as i32
+    }
+
+    fn attack(
+        &mut self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &mut [Vec<CreatureInstance>; 2],
+        physical: bool,
+        power: i32,
+        level: i32,
+        attack_type: &Type,
+        attacker: usize,
+        damage_taker: usize,
+        base_hit_chance: f32,
+    ) -> bool {
+        let damage = self.attack_damage(
+            battle_settings,
+            &creatures[attacker][self.battler_ids[attacker]],
+            &creatures[damage_taker][self.battler_ids[damage_taker]],
+            attacker,
+            damage_taker,
+            physical,
+            power,
+            level,
+            attack_type,
+            base_hit_chance,
+        );
         self.take_damage(creature_instances, damage_taker, damage);
         true
     }
