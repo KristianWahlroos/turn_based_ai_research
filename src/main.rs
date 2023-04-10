@@ -1427,6 +1427,7 @@ pub struct CreatureGenerator {
     pub base_stats_generation: BaseStatsGeneration,
     pub level_generation: LevelGeneration,
     pub dual_type_chance: f64, // Adding Type Generations enable custom type chances
+    pub has_speed_tie_removal: bool,
 }
 
 impl Default for CreatureGenerator {
@@ -1436,6 +1437,7 @@ impl Default for CreatureGenerator {
             base_stats_generation: BaseStatsGeneration::SpreadHigh,
             level_generation: LevelGeneration::From80To89BalancedLinearyHighRange,
             dual_type_chance: 0.9,
+            has_speed_tie_removal: true,
         }
     }
 }
@@ -1446,6 +1448,7 @@ impl CreatureGenerator {
             base_stats_generation: BaseStatsGeneration::Average,
             level_generation: LevelGeneration::Only88,
             dual_type_chance: 0.0,
+            has_speed_tie_removal: true, // When false more even, but less deterministic battles
         }
     }
 }
@@ -1743,6 +1746,30 @@ mod tests {
             first_team.push(Creature::generate_creature(creature_generator));
             second_team.push(Creature::generate_creature(creature_generator));
         }
+        if creature_generator.has_speed_tie_removal {
+            loop {
+                let mut ties_removed = true;
+                for i in 0..size {
+                    for j in 0..size {
+                        if first_team[i].stats.spe == second_team[j].stats.spe {
+                            // in case of equal speed stats. Have deterministic fights.
+                            // Don't favor just one side by letting in ties one side always start.
+                            // Instead do some rerolling to both direction and check if we have created speed ties again
+                            if rand::random::<bool>() {
+                                second_team[j].stats.spe += 1;
+                            } else {
+                                second_team[j].stats.spe -= 1;
+                            }
+                            ties_removed = false;
+                        }
+                    }
+                }
+                if ties_removed {
+                    break;
+                }
+            }
+        }
+
         [first_team, second_team]
     }
 
