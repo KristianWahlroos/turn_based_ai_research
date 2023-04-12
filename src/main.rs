@@ -1906,6 +1906,10 @@ mod tests {
         let mut average_turns = 0;
         let mut type_won = [0i32; 17];
         let mut type_lost = [0i32; 17];
+        let mut won_with_highest_base_stats = [0i32; 6];
+        let mut won_with_lowest_base_stats = [0i32; 6];
+        let mut lost_with_highest_base_stats = [0i32; 6];
+        let mut lost_with_lowest_base_stats = [0i32; 6];
         let mut won_with_specific_volatile_status = [0i32; 8];
         let mut lost_with_specific_volatile_status = [0i32; 8];
         let mut won_with_specific_base_move = [0i32; 10];
@@ -1947,6 +1951,10 @@ mod tests {
                                     for i in 0..creature.types.len() {
                                         type_won[creature.types[i] as usize] += 1;
                                         won_level_distribution[creature.level as usize - 80] += 1;
+                                        let (lowest_stat, highest_stat) =
+                                            creature.estimate_lowest_and_highest_base_stat_id();
+                                        won_with_lowest_base_stats[lowest_stat] += 1;
+                                        won_with_highest_base_stats[highest_stat] += 1;
                                         for a_move in &creature.moves {
                                             won_with_specific_base_move
                                                 [a_move.id.get_as_index()] += 1;
@@ -1968,6 +1976,10 @@ mod tests {
                                     for i in 0..creature.types.len() {
                                         lost_level_distribution[creature.level as usize - 80] += 1;
                                         type_lost[creature.types[i] as usize] += 1;
+                                        let (lowest_stat, highest_stat) =
+                                            creature.estimate_lowest_and_highest_base_stat_id();
+                                        lost_with_lowest_base_stats[lowest_stat] += 1;
+                                        lost_with_highest_base_stats[highest_stat] += 1;
                                         for a_move in &creature.moves {
                                             lost_with_specific_base_move
                                                 [a_move.id.get_as_index()] += 1;
@@ -1991,6 +2003,10 @@ mod tests {
                                     for i in 0..creature.types.len() {
                                         won_level_distribution[creature.level as usize - 80] += 1;
                                         type_won[creature.types[i] as usize] += 1;
+                                        let (lowest_stat, highest_stat) =
+                                            creature.estimate_lowest_and_highest_base_stat_id();
+                                        won_with_lowest_base_stats[lowest_stat] += 1;
+                                        won_with_highest_base_stats[highest_stat] += 1;
                                         for a_move in &creature.moves {
                                             won_with_specific_base_move
                                                 [a_move.id.get_as_index()] += 1;
@@ -2012,6 +2028,10 @@ mod tests {
                                     for i in 0..creature.types.len() {
                                         lost_level_distribution[creature.level as usize - 80] += 1;
                                         type_lost[creature.types[i] as usize] += 1;
+                                        let (lowest_stat, highest_stat) =
+                                            creature.estimate_lowest_and_highest_base_stat_id();
+                                        lost_with_lowest_base_stats[lowest_stat] += 1;
+                                        lost_with_highest_base_stats[highest_stat] += 1;
                                         for a_move in &creature.moves {
                                             lost_with_specific_base_move
                                                 [a_move.id.get_as_index()] += 1;
@@ -2345,6 +2365,48 @@ mod tests {
                 / (won_level_distribution[8] + lost_level_distribution[8]) as f32,
             100.0 * won_level_distribution[9] as f32
                 / (won_level_distribution[9] + lost_level_distribution[9]) as f32,
-        )
+        );
+        println!(
+            "
+        Highest base stat is hp: winrate {}%
+        Highest base stat is attack: winrate {}%
+        Highest base stat is defence: winrate {}%
+        Highest base stat is special attack: winrate {}%
+        Highest base stat is special defense: winrate {}%
+        Highest base stat is speed: winrate {}%
+        Lowest base stat is hp: winrate {}%
+        Lowest base stat is attack: winrate {}%
+        Lowest base stat is defence: winrate {}%
+        Lowest base stat is special attack: winrate {}%
+        Lowest base stat is special defense: winrate {}%
+        Lowest base stat is speed: winrate {}%
+        ",
+            100.0 * won_with_highest_base_stats[0] as f32
+                / (won_with_highest_base_stats[0] as f32 + lost_with_highest_base_stats[0] as f32),
+            100.0 * won_with_highest_base_stats[1] as f32
+                / (won_with_highest_base_stats[1] as f32 + lost_with_highest_base_stats[1] as f32),
+            100.0 * won_with_highest_base_stats[2] as f32
+                / (won_with_highest_base_stats[2] as f32 + lost_with_highest_base_stats[2] as f32),
+            100.0 * won_with_highest_base_stats[3] as f32
+                / (won_with_highest_base_stats[3] as f32 + lost_with_highest_base_stats[3] as f32),
+            100.0 * won_with_highest_base_stats[4] as f32
+                / (won_with_highest_base_stats[4] as f32 + lost_with_highest_base_stats[4] as f32),
+            100.0 * won_with_highest_base_stats[5] as f32
+                / (won_with_highest_base_stats[5] as f32 + lost_with_highest_base_stats[5] as f32),
+            100.0 * won_with_lowest_base_stats[0] as f32
+                / (won_with_lowest_base_stats[0] as f32 + lost_with_lowest_base_stats[0] as f32),
+            100.0 * won_with_lowest_base_stats[1] as f32
+                / (won_with_lowest_base_stats[1] as f32 + lost_with_lowest_base_stats[1] as f32),
+            100.0 * won_with_lowest_base_stats[2] as f32
+                / (won_with_lowest_base_stats[2] as f32 + lost_with_lowest_base_stats[2] as f32),
+            100.0 * won_with_lowest_base_stats[3] as f32
+                / (won_with_lowest_base_stats[3] as f32 + lost_with_lowest_base_stats[3] as f32),
+            100.0 * won_with_lowest_base_stats[4] as f32
+                / (won_with_lowest_base_stats[4] as f32 + lost_with_lowest_base_stats[4] as f32),
+            100.0 * won_with_lowest_base_stats[5] as f32
+                / (won_with_lowest_base_stats[5] as f32 + lost_with_lowest_base_stats[5] as f32),
+        );
+    }
+}
     }
 }
