@@ -423,6 +423,72 @@ impl BattleInstance {
         }
     }
 
+    /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
+    /// Some naughty repeating :(
+    fn check_move_damage(
+        &mut self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        move_id: usize,
+        actioner: bool,
+    ) -> i32 {
+        let mut damage = 0;
+        let attacker = &creatures[actioner as usize][self.battler_ids[actioner as usize]];
+        let mut success = true;
+        let base_hit_chance =
+            match self.get_base_chance_of_success(battle_settings, attacker, actioner, move_id) {
+                Some(base_chance) => base_chance,
+                None => return 0,
+            };
+        for unit in &attacker.moves[move_id].units {
+            if !success {
+                if unit.continues_previous_unit {
+                    break;
+                }
+            }
+            if unit.chance_of_success < rand::random() {
+                success = false;
+                continue;
+            }
+            let damage_taker = ((!actioner) ^ unit.target_self) as usize;
+            damage += match unit.effect {
+                Effect::PhysicalAttack => self.attack_damage(
+                    battle_settings,
+                    attacker,
+                    &creatures[damage_taker][self.battler_ids[damage_taker]],
+                    actioner as usize,
+                    damage_taker,
+                    true,
+                    unit.power.unwrap(),
+                    attacker.level as i32,
+                    &attacker.moves[move_id].move_type,
+                    base_hit_chance,
+                ),
+                Effect::SpecialAttack => self.attack_damage(
+                    battle_settings,
+                    attacker,
+                    &creatures[damage_taker][self.battler_ids[damage_taker]],
+                    actioner as usize,
+                    damage_taker,
+                    false,
+                    unit.power.unwrap(),
+                    attacker.level as i32,
+                    &attacker.moves[move_id].move_type,
+                    base_hit_chance,
+                ),
+                Effect::Unimplemented => unimplemented!(
+                    "Not yet implemented the unit for {:?}",
+                    &attacker.moves[move_id]
+                ),
+                // Set or addition
+                Effect::ValueVolatileStatusChange(ref volatile_status) => {
+                    panic!("Can't calculate damage done from status change")
+                }
+            };
+        }
+        damage
+    }
+
     fn use_move(
         &mut self,
         battle_settings: &BattleSettings,
