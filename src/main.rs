@@ -1364,6 +1364,25 @@ impl Creature {
         }
         1.0
     }
+
+    // When equal favors earlier stats
+    pub fn estimate_lowest_and_highest_base_stat_id(&self) -> (usize, usize) {
+        let mut lowest = Stats::estimate_stat_from_hp(self.stats.hp, self.level);
+        let mut highest = Stats::estimate_stat_from_hp(self.stats.hp, self.level);
+        let mut lowest_index = 0;
+        let mut highest_index = 0;
+        let stats: [i32; 5] = self.stats.into();
+        for i in 0..5 {
+            if stats[i] < lowest {
+                lowest = stats[i];
+                lowest_index = i + 1;
+            } else if stats[i] > highest {
+                highest = stats[i];
+                highest_index = i + 1;
+            }
+        }
+        (lowest_index, highest_index)
+    }
 }
 
 #[derive(Clone, Debug)]
