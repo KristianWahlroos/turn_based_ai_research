@@ -480,10 +480,7 @@ impl BattleInstance {
                     "Not yet implemented the unit for {:?}",
                     &attacker.moves[move_id]
                 ),
-                // Set or addition
-                Effect::ValueVolatileStatusChange(ref volatile_status) => {
-                    panic!("Can't calculate damage done from status change")
-                }
+                Effect::ValueVolatileStatusChange(_) => 0,
             };
         }
         damage
