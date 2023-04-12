@@ -1696,6 +1696,12 @@ impl Stats {
     fn calculate_hp(base_stat: i32, level: i32) -> i32 {
         (((2 * base_stat + 31 + 21) * level) / 100) + level + 10
     }
+    fn estimate_base_stat_from_hp(hp: i32, level: i32) -> i32 {
+        (((hp - level - 10) * 100 / level) - 31 - 21) / 2
+    }
+    fn estimate_stat_from_hp(hp: i32, level: i32) -> i32 {
+        Stats::calculate_stat(Stats::estimate_base_stat_from_hp(hp, level), level)
+    }
     fn calculate_stat(base_stat: i32, level: i32) -> i32 {
         (((2 * base_stat + 31 + 21) * level) / 100) + 5
     }
@@ -1815,6 +1821,24 @@ mod tests {
             });
         }
         [first_team, second_team]
+    }
+
+    #[test]
+    fn convert_hp_to_base_stat_test() {
+        let mut inaccuracy = 0;
+        for base_stat in 53..=113 {
+            for level in 80..90 {
+                inaccuracy += (Stats::estimate_base_stat_from_hp(
+                    Stats::calculate_hp(base_stat, level),
+                    level,
+                ) - base_stat)
+                    * (Stats::estimate_base_stat_from_hp(
+                        Stats::calculate_hp(base_stat, level),
+                        level,
+                    ) - base_stat);
+            }
+        }
+        assert!(inaccuracy < 600);
     }
 
     #[test]
