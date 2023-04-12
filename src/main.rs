@@ -1656,6 +1656,19 @@ pub fn get_creature_types(dual_type_chance: f64, rng: &mut ThreadRng) -> Vec<Typ
     }
 }
 
+impl From<Stats> for [i32; 6] {
+    fn from(value: Stats) -> Self {
+        [
+            value.hp, value.atk, value.def, value.spa, value.spd, value.spe,
+        ]
+    }
+}
+impl From<Stats> for [i32; 5] {
+    fn from(value: Stats) -> Self {
+        [value.atk, value.def, value.spa, value.spd, value.spe]
+    }
+}
+
 impl Stats {
     pub fn new(base_stats: [i32; 6], level: i32) -> Stats {
         Stats {
