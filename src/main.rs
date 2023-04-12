@@ -515,8 +515,31 @@ impl BattleInstance {
         creature_instances[damage_taker][self.battler_ids[damage_taker]].current_health -= damage;
     }
 
+    pub fn get_base_chance_of_success(
+        &self,
+        battle_settings: &BattleSettings,
+        attacker: &Creature,
+        actioner: bool,
+        move_id: usize,
+    ) -> Option<f32> {
+        match self.get_chance_of_success(attacker, actioner, move_id) {
+            Some(chance) => {
+                if !battle_settings.always_hits {
+                    let random = rand::random();
+                    assert!(random <= 1.0);
+                    assert!(random >= 0.0);
+                    if chance < random {
+                        return None;
+                    }
+                }
+                Some(chance)
+            }
+            None => Some(1.0),
+        }
+    }
+
     fn get_chance_of_success(
-        &mut self,
+        &self,
         creature: &Creature,
         actioner: bool,
         move_id: usize,
@@ -551,23 +574,12 @@ impl BattleInstance {
         actioner: bool,
     ) {
         let attacker = &creatures[actioner as usize][self.battler_ids[actioner as usize]];
-        // TODO immunities should cause failure here
         let mut success = true;
-        // TODO consider if PP should be included
-        let base_hit_chance = match self.get_chance_of_success(attacker, actioner, move_id) {
-            Some(chance) => {
-                if !battle_settings.always_hits {
-                    let random = rand::random();
-                    assert!(random <= 1.0);
-                    assert!(random >= 0.0);
-                    if chance < random {
-                        return;
-                    }
-                }
-                chance
-            }
-            None => 1.0,
-        };
+        let base_hit_chance =
+            match self.get_base_chance_of_success(battle_settings, attacker, actioner, move_id) {
+                Some(base_chance) => base_chance,
+                None => return,
+            };
         for unit in &attacker.moves[move_id].units {
             // check did the last loop succeed
             if !success {
@@ -576,10 +588,7 @@ impl BattleInstance {
                     break;
                 }
             }
-            let random = rand::random();
-            assert!(random <= 1.0);
-            assert!(random >= 0.0);
-            if unit.chance_of_success < random {
+            if unit.chance_of_success < rand::random() {
                 success = false;
                 continue;
             }
