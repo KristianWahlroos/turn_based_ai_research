@@ -1357,6 +1357,7 @@ pub struct Stats {
     pub spe: i32,
 }
 
+#[derive(Clone)]
 pub enum LevelGeneration {
     From80To89Uniform,
     From80To89BalancedLinearyLowRange,
@@ -1393,6 +1394,7 @@ impl LevelGeneration {
 }
 
 /// Base stats' sum about 500 chosen for now
+#[derive(Clone)]
 pub enum BaseStatsGeneration {
     Average,
     SpreadLow,
@@ -1422,6 +1424,7 @@ impl BaseStatsGeneration {
     }
 }
 
+#[derive(Clone)]
 pub struct CreatureGenerator {
     pub move_generation_settings: MoveGenerationSettings,
     pub base_stats_generation: BaseStatsGeneration,
@@ -1459,6 +1462,7 @@ impl CreatureGenerator {
 /// Could have bool for duplicate type removal
 /// Should prevent duplicate stats modifier skills
 /// Should add ratios to stats modifier stat
+#[derive(Clone)]
 pub struct MoveGenerationSettings {
     low_attack_ratio: i32,
     med_attack_ratio: i32,
