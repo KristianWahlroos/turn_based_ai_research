@@ -423,6 +423,24 @@ impl BattleInstance {
         }
     }
 
+    fn get_highest_damage_move(
+        &mut self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> usize {
+        let mut highest_damage = 0;
+        let mut highest_damage_index = 0;
+        for i in 0..4 {
+            let damage = self.check_move_damage(battle_settings, creatures, i, actioner);
+            if damage > highest_damage {
+                highest_damage_index = i;
+                highest_damage = damage;
+            }
+        }
+        highest_damage_index
+    }
+
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
     fn check_move_damage(
