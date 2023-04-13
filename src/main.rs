@@ -193,7 +193,7 @@ impl Default for BattleSettings {
     }
 }
 
-// cloneable
+#[derive(Clone)]
 pub struct BattleInstance {
     battler_ids: [usize; 2],
     volatile_statuses: [Vec<(VolatileStatus, i32)>; 2],
