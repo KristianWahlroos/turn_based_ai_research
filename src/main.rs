@@ -99,14 +99,26 @@ pub fn calculate_damage(
 }
 
 pub trait AI {
-    fn get_action(&self) -> CombatAction;
+    fn get_action(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> CombatAction;
     fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize;
 }
 
 pub struct RandomAI {}
 
 impl AI for RandomAI {
-    fn get_action(&self) -> CombatAction {
+    fn get_action(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> CombatAction {
         CombatAction::Attack(rand::random::<u8>() % 4)
     }
     /// Assumption that if all fainted we don't force switch
@@ -157,7 +169,7 @@ enum Roll {
     AverageRoll,
 }
 
-struct BattleSettings {
+pub struct BattleSettings {
     crit_enabled: bool,
     always_hits: bool,
     roll: Roll,
@@ -182,7 +194,7 @@ impl Default for BattleSettings {
 }
 
 // cloneable
-struct BattleInstance {
+pub struct BattleInstance {
     battler_ids: [usize; 2],
     volatile_statuses: [Vec<(VolatileStatus, i32)>; 2],
     current_turn: i32, // Current turn is used for weather mostly as turn order might by have to take into account when using it in things with side
@@ -1863,8 +1875,10 @@ mod tests {
                 setup(&CreatureGenerator::default(), 3);
             let random_ai_a = RandomAI {};
             let random_ai_b = RandomAI {};
-            let mut combat_action_1 = random_ai_a.get_action();
-            let mut combat_action_2 = random_ai_b.get_action();
+            let mut combat_action_1 =
+                random_ai_a.get_action(&battle_instance, &battle_settings, &creatures, false);
+            let mut combat_action_2 =
+                random_ai_b.get_action(&battle_instance, &battle_settings, &creatures, true);
             for i in 0..1000 {
                 for side in 0..2 {
                     turns_alive_for_type
@@ -1995,8 +2009,10 @@ mod tests {
                         break;
                     }
                 }
-                combat_action_1 = random_ai_a.get_action();
-                combat_action_2 = random_ai_b.get_action();
+                combat_action_1 =
+                    random_ai_a.get_action(&battle_instance, &battle_settings, &creatures, false);
+                combat_action_2 =
+                    random_ai_b.get_action(&battle_instance, &battle_settings, &creatures, true);
             }
         }
         println!(
