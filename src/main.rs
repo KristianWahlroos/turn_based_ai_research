@@ -436,7 +436,7 @@ impl BattleInstance {
     }
 
     fn get_highest_damage_move(
-        &mut self,
+        &self,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
         actioner: bool,
@@ -456,7 +456,7 @@ impl BattleInstance {
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
     fn check_move_damage(
-        &mut self,
+        &self,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
         move_id: usize,
