@@ -132,6 +132,33 @@ impl AI for RandomAI {
     }
 }
 
+pub struct StrongestAttackAI {}
+
+impl AI for StrongestAttackAI {
+    fn get_action(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> CombatAction {
+        CombatAction::Attack(battle_instance.get_highest_damage_move(
+            &battle_settings,
+            &creatures,
+            actioner,
+        ) as u8)
+    }
+    /// Assumption that if all fainted we don't force switch
+    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
+        for switch_to in 0..creature_instances.len() {
+            if !creature_instances[switch_to].is_fainted() {
+                return switch_to;
+            }
+        }
+        panic!("Assumption that if all fainted we don't force switch");
+    }
+}
+
 fn has_team_fainted(creature_instances: &[Vec<CreatureInstance>; 2], side: usize) -> bool {
     for instance in &creature_instances[side] {
         if !instance.is_fainted() {
