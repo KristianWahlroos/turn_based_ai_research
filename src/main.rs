@@ -1883,6 +1883,126 @@ mod tests {
     }
 
     #[test]
+    fn strongest_attack_ai() {
+        let mut creature_generator = CreatureGenerator::default();
+        creature_generator.move_generation_settings.stats_mod_chance = 0;
+        creature_generator.move_generation_settings.missable_ratio = 0;
+        let mut times_strongest_ai_won_twice = 0;
+        for i in 0..100000 {
+            let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
+                setup(&creature_generator.clone(), 3);
+            let strongest_attack_ai = StrongestAttackAI {};
+            let random_ai = RandomAI {};
+            let mut creature_instances_2 = creature_instances.clone();
+            let mut battle_instance_2 = battle_instance.clone();
+
+            let mut combat_action_1 = strongest_attack_ai.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                false,
+            );
+            let mut combat_action_2 =
+                random_ai.get_action(&battle_instance, &battle_settings, &creatures, true);
+            let mut strongest_ai_won = false;
+            let mut combat_action_list = vec![];
+
+            for i in 0..500 {
+                combat_action_list.push(combat_action_1.clone());
+                combat_action_list.push(combat_action_2.clone());
+                let interrupt_opt = battle_instance.turn(
+                    &battle_settings,
+                    &creatures,
+                    &mut creature_instances,
+                    &[combat_action_1.clone(), combat_action_2.clone()],
+                );
+                match battle_instance.handle_interrupts(
+                    &mut creature_instances,
+                    interrupt_opt,
+                    &strongest_attack_ai,
+                    &random_ai,
+                ) {
+                    Ok(_) => (),
+                    Err(interrupt) => match interrupt {
+                        Interrupt::AWon => {
+                            strongest_ai_won = true;
+                            break;
+                        }
+                        Interrupt::BWon => {
+                            strongest_ai_won = false;
+                            break;
+                        }
+                        _ => panic!("faints should be handled already"),
+                    },
+                }
+                combat_action_1 = strongest_attack_ai.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    false,
+                );
+                combat_action_2 =
+                    random_ai.get_action(&battle_instance, &battle_settings, &creatures, true);
+            }
+            combat_action_1 =
+                random_ai.get_action(&battle_instance_2, &battle_settings, &creatures, false);
+            combat_action_2 = strongest_attack_ai.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                true,
+            );
+            combat_action_list.push(CombatAction::Switch(0));
+            for i in 0..1000 {
+                combat_action_list.push(combat_action_1.clone());
+                combat_action_list.push(combat_action_2.clone());
+                let interrupt_opt = battle_instance_2.turn(
+                    &battle_settings,
+                    &creatures,
+                    &mut creature_instances_2,
+                    &[combat_action_1.clone(), combat_action_2.clone()],
+                );
+                match battle_instance_2.handle_interrupts(
+                    &mut creature_instances_2,
+                    interrupt_opt,
+                    &random_ai,
+                    &strongest_attack_ai,
+                ) {
+                    Ok(_) => (),
+                    Err(interrupt) => match interrupt {
+                        Interrupt::AWon => {
+                            assert!(strongest_ai_won);
+                            break;
+                        }
+                        Interrupt::BWon => {
+                            if strongest_ai_won {
+                                times_strongest_ai_won_twice += 1
+                            }
+                            break;
+                        }
+                        _ => panic!("faints should be handled already"),
+                    },
+                }
+                if i == 999 {
+                    panic!("should not be 999 when there are only attacks");
+                }
+                combat_action_1 =
+                    random_ai.get_action(&battle_instance_2, &battle_settings, &creatures, false);
+                combat_action_2 = strongest_attack_ai.get_action(
+                    &battle_instance_2,
+                    &battle_settings,
+                    &creatures,
+                    true,
+                );
+            }
+        }
+        println!(
+            "Times strongest AI won both sides against random AI: {}",
+            times_strongest_ai_won_twice
+        )
+    }
+
+    #[test]
     fn team_generation_test() {
         let mut average_turns = 0;
         let mut type_won = [0i32; 17];
