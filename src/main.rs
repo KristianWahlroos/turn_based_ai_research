@@ -123,13 +123,12 @@ impl AI for RandomAI {
     }
     /// Assumption that if all fainted we don't force switch
     fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
-        loop {
-            // TODO random ai doesn't strategizes, so for loop might be better
-            let switch_to = rand::random::<usize>() % creature_instances.len();
+        for switch_to in 0..creature_instances.len() {
             if !creature_instances[switch_to].is_fainted() {
                 return switch_to;
             }
         }
+        panic!("Assumption that if all fainted we don't force switch");
     }
 }
 
