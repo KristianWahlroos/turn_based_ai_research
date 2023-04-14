@@ -213,7 +213,7 @@ impl Default for BattleSettings {
     fn default() -> Self {
         BattleSettings {
             crit_enabled: false,
-            always_hits: false,
+            always_hits: true,
             roll: Roll::HighRoll,
         }
     }
