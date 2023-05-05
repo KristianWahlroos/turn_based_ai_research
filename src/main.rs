@@ -104,6 +104,7 @@ pub trait AI {
         battle_instance: &BattleInstance,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> CombatAction;
     fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize;
@@ -117,6 +118,7 @@ impl AI for RandomAI {
         battle_instance: &BattleInstance,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> CombatAction {
         CombatAction::Attack(rand::random::<u8>() % 4)
@@ -140,6 +142,7 @@ impl AI for StrongestAttackAI {
         battle_instance: &BattleInstance,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> CombatAction {
         CombatAction::Attack(battle_instance.get_highest_damage_move(
@@ -1900,10 +1903,16 @@ mod tests {
                 &battle_instance,
                 &battle_settings,
                 &creatures,
+                &creature_instances,
                 false,
             );
-            let mut combat_action_2 =
-                random_ai.get_action(&battle_instance, &battle_settings, &creatures, true);
+            let mut combat_action_2 = random_ai.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                true,
+            );
             let mut strongest_ai_won = false;
             let mut combat_action_list = vec![];
 
@@ -1939,17 +1948,29 @@ mod tests {
                     &battle_instance,
                     &battle_settings,
                     &creatures,
+                    &creature_instances,
                     false,
                 );
-                combat_action_2 =
-                    random_ai.get_action(&battle_instance, &battle_settings, &creatures, true);
+                combat_action_2 = random_ai.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    true,
+                );
             }
-            combat_action_1 =
-                random_ai.get_action(&battle_instance_2, &battle_settings, &creatures, false);
+            combat_action_1 = random_ai.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                false,
+            );
             combat_action_2 = strongest_attack_ai.get_action(
                 &battle_instance_2,
                 &battle_settings,
                 &creatures,
+                &creature_instances,
                 true,
             );
             combat_action_list.push(CombatAction::Switch(0));
@@ -1986,12 +2007,18 @@ mod tests {
                 if i == 999 {
                     panic!("should not be 999 when there are only attacks");
                 }
-                combat_action_1 =
-                    random_ai.get_action(&battle_instance_2, &battle_settings, &creatures, false);
+                combat_action_1 = random_ai.get_action(
+                    &battle_instance_2,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    false,
+                );
                 combat_action_2 = strongest_attack_ai.get_action(
                     &battle_instance_2,
                     &battle_settings,
                     &creatures,
+                    &creature_instances,
                     true,
                 );
             }
@@ -2025,10 +2052,20 @@ mod tests {
                 setup(&CreatureGenerator::default(), 3);
             let random_ai_a = RandomAI {};
             let random_ai_b = RandomAI {};
-            let mut combat_action_1 =
-                random_ai_a.get_action(&battle_instance, &battle_settings, &creatures, false);
-            let mut combat_action_2 =
-                random_ai_b.get_action(&battle_instance, &battle_settings, &creatures, true);
+            let mut combat_action_1 = random_ai_a.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                false,
+            );
+            let mut combat_action_2 = random_ai_b.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                true,
+            );
             for i in 0..1000 {
                 for side in 0..2 {
                     turns_alive_for_type
@@ -2159,10 +2196,20 @@ mod tests {
                         break;
                     }
                 }
-                combat_action_1 =
-                    random_ai_a.get_action(&battle_instance, &battle_settings, &creatures, false);
-                combat_action_2 =
-                    random_ai_b.get_action(&battle_instance, &battle_settings, &creatures, true);
+                combat_action_1 = random_ai_a.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    false,
+                );
+                combat_action_2 = random_ai_b.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    true,
+                );
             }
         }
         println!(
