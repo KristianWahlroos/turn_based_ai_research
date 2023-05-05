@@ -145,11 +145,11 @@ impl AI for StrongestAttackAI {
         creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> CombatAction {
-        CombatAction::Attack(battle_instance.get_highest_damage_move(
-            &battle_settings,
-            &creatures,
-            actioner,
-        ) as u8)
+        CombatAction::Attack(
+            battle_instance
+                .get_highest_damage_move(&battle_settings, &creatures, actioner)
+                .0 as u8,
+        )
     }
     /// Assumption that if all fainted we don't force switch
     fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
@@ -469,7 +469,7 @@ impl BattleInstance {
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
         actioner: bool,
-    ) -> usize {
+    ) -> (usize, i32) {
         let mut highest_damage = 0;
         let mut highest_damage_index = 0;
         for i in 0..4 {
@@ -479,7 +479,8 @@ impl BattleInstance {
                 highest_damage = damage;
             }
         }
-        highest_damage_index
+        (highest_damage_index, highest_damage)
+    }
     }
 
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
