@@ -481,6 +481,19 @@ impl BattleInstance {
         }
         (highest_damage_index, highest_damage)
     }
+
+    fn get_turns_to_ko_with_highest_damage_move(
+        &self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) -> f32 {
+        (creature_instances[!actioner as usize][self.battler_ids[!actioner as usize]].current_health
+            as f32)
+            / self
+                .get_highest_damage_move(battle_settings, creatures, actioner)
+                .1 as f32
     }
 
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
