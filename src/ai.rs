@@ -63,6 +63,41 @@ impl AI for StrongestAttackAI {
     }
 }
 
+pub struct MinMaxMovesAI {
+    pub depth: u8,
+}
+
+impl AI for MinMaxMovesAI {
+    fn get_action(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) -> CombatAction {
+        CombatAction::Attack(
+            (min_max(
+                battle_instance,
+                battle_settings,
+                creature_instances,
+                creatures,
+                actioner,
+                self.depth,
+            )
+            .1 / 4) as u8,
+        )
+    }
+    /// Assumption that if all fainted we don't force switch
+    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
+        for switch_to in 0..creature_instances.len() {
+            if !creature_instances[switch_to].is_fainted() {
+                return switch_to;
+            }
+        }
+        panic!("Assumption that if all fainted we don't force switch");
+    }
+}
 fn min_max(
     battle_instance: &BattleInstance,
     battle_settings: &BattleSettings,
