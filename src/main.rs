@@ -1980,6 +1980,151 @@ mod tests {
             times_strongest_ai_won_twice
         )
     }
+    #[test]
+    fn min_max_ai() {
+        let mut creature_generator = CreatureGenerator::default();
+        creature_generator.move_generation_settings.stats_mod_chance = 0;
+        creature_generator.move_generation_settings.missable_ratio = 0;
+        let mut times_min_max_ai_won_twice = 0;
+        for i in 0..10000 {
+            let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
+                setup(&creature_generator.clone(), 1);
+            let min_max_ai = MinMaxMovesAI { depth: 1 };
+            let strongest_ai = StrongestAttackAI {};
+            let mut creature_instances_2 = creature_instances.clone();
+            let mut battle_instance_2 = battle_instance.clone();
+
+            let mut combat_action_1 = min_max_ai.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                false,
+            );
+            let mut combat_action_2 = strongest_ai.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                true,
+            );
+            let mut min_max_ai_won = false;
+            let mut combat_action_list = vec![];
+
+            for i in 0..500 {
+                combat_action_list.push(combat_action_1.clone());
+                combat_action_list.push(combat_action_2.clone());
+                let interrupt_opt = battle_instance.turn(
+                    &battle_settings,
+                    &creatures,
+                    &mut creature_instances,
+                    &[combat_action_1.clone(), combat_action_2.clone()],
+                );
+                match battle_instance.handle_interrupts(
+                    &mut creature_instances,
+                    interrupt_opt,
+                    &min_max_ai,
+                    &strongest_ai,
+                ) {
+                    Ok(_) => (),
+                    Err(interrupt) => match interrupt {
+                        Interrupt::AWon => {
+                            min_max_ai_won = true;
+                            break;
+                        }
+                        Interrupt::BWon => {
+                            min_max_ai_won = false;
+                            break;
+                        }
+                        _ => panic!("faints should be handled already"),
+                    },
+                }
+                combat_action_1 = min_max_ai.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    false,
+                );
+                combat_action_2 = strongest_ai.get_action(
+                    &battle_instance,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances,
+                    true,
+                );
+            }
+            combat_action_list.push(CombatAction::Switch(0));
+            combat_action_1 = strongest_ai.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                &creature_instances_2,
+                false,
+            );
+            combat_action_2 = min_max_ai.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                &creature_instances_2,
+                true,
+            );
+            for i in 0..1000 {
+                combat_action_list.push(combat_action_1.clone());
+                combat_action_list.push(combat_action_2.clone());
+                let interrupt_opt = battle_instance_2.turn(
+                    &battle_settings,
+                    &creatures,
+                    &mut creature_instances_2,
+                    &[combat_action_1.clone(), combat_action_2.clone()],
+                );
+                match battle_instance_2.handle_interrupts(
+                    &mut creature_instances_2,
+                    interrupt_opt,
+                    &strongest_ai,
+                    &min_max_ai,
+                ) {
+                    Ok(_) => (),
+                    Err(interrupt) => match interrupt {
+                        Interrupt::AWon => {
+                            if !min_max_ai_won {
+                                println!("{:?}", combat_action_list);
+
+                                println!("This is bad");
+                                panic!("min max should always win strongest move");
+                            }
+                            break;
+                        }
+                        Interrupt::BWon => {
+                            if min_max_ai_won {
+                                times_min_max_ai_won_twice += 1
+                            }
+                            break;
+                        }
+                        _ => panic!("faints should be handled already"),
+                    },
+                }
+                combat_action_1 = strongest_ai.get_action(
+                    &battle_instance_2,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances_2,
+                    false,
+                );
+                combat_action_2 = min_max_ai.get_action(
+                    &battle_instance_2,
+                    &battle_settings,
+                    &creatures,
+                    &creature_instances_2,
+                    true,
+                );
+            }
+        }
+        println!(
+            "Times min max AI won both sides against strongest AI: {}",
+            times_min_max_ai_won_twice
+        )
+    }
 
     #[test]
     fn team_generation_test() {
