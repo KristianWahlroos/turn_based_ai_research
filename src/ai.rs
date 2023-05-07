@@ -63,3 +63,24 @@ impl AI for StrongestAttackAI {
     }
 }
 
+pub fn get_points(
+    battle_instance: &BattleInstance,
+    battle_settings: &BattleSettings,
+    actioner: bool,
+    creatures: &[Vec<Creature>; 2],
+    creature_instances: &[Vec<CreatureInstance>; 2],
+) -> f32 {
+    let active_side_turns_to_ko = battle_instance.get_turns_to_ko_with_highest_damage_move(
+        battle_settings,
+        creatures,
+        &creature_instances,
+        actioner,
+    );
+    let passive_side_turns_to_ko = battle_instance.get_turns_to_ko_with_highest_damage_move(
+        battle_settings,
+        creatures,
+        &creature_instances,
+        !actioner,
+    );
+    passive_side_turns_to_ko - active_side_turns_to_ko
+}
