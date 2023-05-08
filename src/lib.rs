@@ -11,10 +11,6 @@ use serde::Serialize;
 use std::fs;
 use std::ops::Mul;
 
-fn main() {
-    env_logger::builder().format_timestamp(None).init();
-}
-
 fn get_stat_stage_multiplier(stage: i32) -> f32 {
     if stage == 0 {
         1.0
