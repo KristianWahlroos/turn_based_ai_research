@@ -1,6 +1,6 @@
 use env_logger::{Env, Logger};
 use log::{debug, error, info, log_enabled, warn, Level};
-mod ai;
+pub mod ai;
 mod move_data;
 use ai::*;
 use move_data::*;
@@ -158,9 +158,9 @@ impl Default for BattleSettings {
 
 #[derive(Clone)]
 pub struct BattleInstance {
-    battler_ids: [usize; 2],
-    volatile_statuses: [Vec<(VolatileStatus, i32)>; 2],
-    current_turn: i32, // Current turn is used for weather mostly as turn order might by have to take into account when using it in things with side
+    pub battler_ids: [usize; 2],
+    pub volatile_statuses: [Vec<(VolatileStatus, i32)>; 2],
+    pub current_turn: i32, // Current turn is used for weather mostly as turn order might by have to take into account when using it in things with side
 }
 impl Default for BattleInstance {
     fn default() -> Self {
@@ -225,7 +225,7 @@ impl BattleInstance {
         }
     }
 
-    fn handle_interrupts<AiA: AI, AiB: AI>(
+    pub fn handle_interrupts<AiA: AI, AiB: AI>(
         &mut self,
         creature_instances: &mut [Vec<CreatureInstance>; 2],
         interrupt_opt: Option<Interrupt>,
@@ -1441,17 +1441,17 @@ impl CreatureGenerator {
 /// Should add ratios to stats modifier stat
 #[derive(Clone)]
 pub struct MoveGenerationSettings {
-    low_attack_ratio: i32,
-    med_attack_ratio: i32,
-    high_attack_ratio: i32,
-    attack_ratio: i32, // attack ratio should be low as there is already two attacks that are not rolled
-    stats_mod_chance: i32,
-    one_step_stat_ratio: i32,
-    two_step_stat_ratio: i32,
-    buff_ratio: i32,
-    debuff_ratio: i32,
-    always_hit_ratio: i32,
-    missable_ratio: i32,
+    pub low_attack_ratio: i32,
+    pub med_attack_ratio: i32,
+    pub high_attack_ratio: i32,
+    pub attack_ratio: i32, // attack ratio should be low as there is already two attacks that are not rolled
+    pub stats_mod_chance: i32,
+    pub one_step_stat_ratio: i32,
+    pub two_step_stat_ratio: i32,
+    pub buff_ratio: i32,
+    pub debuff_ratio: i32,
+    pub always_hit_ratio: i32,
+    pub missable_ratio: i32,
 }
 
 impl Default for MoveGenerationSettings {
