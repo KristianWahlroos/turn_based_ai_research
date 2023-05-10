@@ -83,6 +83,7 @@ impl AI for MinMaxMovesAI {
                 creature_instances,
                 creatures,
                 actioner,
+                0,
                 self.depth,
             )
             .1 / 4) as u8,
@@ -105,6 +106,7 @@ fn min_max(
     creatures: &[Vec<Creature>; 2],
     actioner: bool,
     depth: u8,
+    max_depth: u8,
 ) -> (f32, usize) {
     let ai_for_forced_switch = RandomAI {};
     let mut points = vec![];
@@ -156,7 +158,7 @@ fn min_max(
                     _ => panic!("faints should be handled already"),
                 },
             }
-            if depth != 0 {
+            if depth == max_depth {
                 points.push(
                     min_max(
                         &battle_instance_cloned,
@@ -164,7 +166,8 @@ fn min_max(
                         &creature_instances_cloned,
                         creatures,
                         actioner,
-                        depth - 1,
+                        depth + 1,
+                        max_depth,
                     )
                     .0,
                 );
