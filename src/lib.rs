@@ -416,6 +416,39 @@ impl BattleInstance {
         (highest_damage_index, highest_damage)
     }
 
+    fn get_highest_effect_damage_moves(
+        &self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> (Option<(usize, i32)>, Option<(usize, i32)>) {
+        let mut highest_physical: Option<(usize, i32)> = None;
+        let mut highest_special: Option<(usize, i32)> = None;
+        for i in 0..4 {
+            let damage = self.check_move_damage(battle_settings, creatures, i, actioner);
+            match creatures[self.battler_ids[actioner as usize]][actioner as usize].moves[i].id {
+                MoveID::DamageLow(physical, _)
+                | MoveID::DamageMed(physical, _)
+                | MoveID::DamageHigh(physical, _)
+                | MoveID::MissLow(physical, _)
+                | MoveID::MissMed(physical, _)
+                | MoveID::MissHigh(physical, _) => {
+                    if physical {
+                        if highest_physical == None || damage > highest_physical.unwrap().1 {
+                            highest_physical = Some((i, damage));
+                        }
+                    } else {
+                        if highest_special == None || damage > highest_special.unwrap().1 {
+                            highest_special = Some((i, damage));
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+        (highest_physical, highest_special)
+    }
+
     fn get_turns_to_ko_with_highest_damage_move(
         &self,
         battle_settings: &BattleSettings,
