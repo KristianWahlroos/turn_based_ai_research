@@ -756,21 +756,25 @@ impl BattleInstance {
             CombatAction::Switch(_) => -6,
         };
         if first_priority == second_priority {
-            let speed_0 = self.get_speed(creatures, 0);
-            let speed_1 = self.get_speed(creatures, 1);
-            if speed_0 == speed_1 {
-                random_roll()
-            } else if speed_0 > speed_1 {
-                true
-            } else {
-                false
-            }
+            self.get_faster_creature(creatures)
         } else if first_priority > second_priority {
             true
         } else {
             false
         }
     }
+    fn get_faster_creature(&self, creatures: &[Vec<Creature>; 2]) -> bool {
+        let speed_0 = self.get_speed(creatures, 0);
+        let speed_1 = self.get_speed(creatures, 1);
+        if speed_0 == speed_1 {
+            random_roll()
+        } else if speed_0 > speed_1 {
+            true
+        } else {
+            false
+        }
+    }
+
     fn get_speed(&self, creatures: &[Vec<Creature>; 2], side: usize) -> i32 {
         (self.get_battler(side, creatures).stats.spe as f32
             * get_stat_stage_multiplier(
