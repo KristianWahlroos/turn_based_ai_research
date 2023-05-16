@@ -756,14 +756,8 @@ impl BattleInstance {
             CombatAction::Switch(_) => -6,
         };
         if first_priority == second_priority {
-            let speed_0 = (self.get_battler(0, creatures).stats.spe as f32
-                * get_stat_stage_multiplier(
-                    self.get_stage_from_value_volatile_status(0, VolatileStatus::SpeStage),
-                )) as i32;
-            let speed_1 = (self.get_battler(1, creatures).stats.spe as f32
-                * get_stat_stage_multiplier(
-                    self.get_stage_from_value_volatile_status(1, VolatileStatus::SpeStage),
-                )) as i32;
+            let speed_0 = self.get_speed(creatures, 0);
+            let speed_1 = self.get_speed(creatures, 1);
             if speed_0 == speed_1 {
                 random_roll()
             } else if speed_0 > speed_1 {
@@ -776,6 +770,12 @@ impl BattleInstance {
         } else {
             false
         }
+    }
+    fn get_speed(&self, creatures: &[Vec<Creature>; 2], side: usize) -> i32 {
+        (self.get_battler(side, creatures).stats.spe as f32
+            * get_stat_stage_multiplier(
+                self.get_stage_from_value_volatile_status(side, VolatileStatus::SpeStage),
+            )) as i32
     }
     fn get_battler<'a>(&'a self, side: usize, creatures: &'a [Vec<Creature>; 2]) -> &Creature {
         &creatures[side][self.battler_ids[side]]
