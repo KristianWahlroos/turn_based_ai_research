@@ -186,16 +186,16 @@ impl BattleInstance {
         creature_instances: &mut [Vec<CreatureInstance>; 2],
         combat_actions: &[CombatAction; 2],
     ) -> Option<Interrupt> {
-        let first_faster = self.is_first_faster(creatures, combat_actions);
+        let faster_id = self.get_faster_move(creatures, combat_actions);
         self.do_action(
             battle_settings,
             creatures,
             creature_instances,
             combat_actions,
-            !first_faster,
+            faster_id,
         );
 
-        if !creature_instances[first_faster as usize][self.battler_ids[first_faster as usize]]
+        if !creature_instances[!faster_id as usize][self.battler_ids[!faster_id as usize]]
             .is_fainted()
         {
             self.do_action(
@@ -203,7 +203,7 @@ impl BattleInstance {
                 creatures,
                 creature_instances,
                 combat_actions,
-                first_faster,
+                !faster_id,
             );
         }
         self.current_turn += 1;
@@ -489,8 +489,8 @@ impl BattleInstance {
                     creature_instances,
                     !actioner,
                 );
-                let first_faster = battle_instance.get_faster_creature(creatures);
-                matchup_vec.push(([active, passive], first_faster));
+                let active_faster = battle_instance.get_faster_creature(creatures) == actioner;
+                matchup_vec.push(([active, passive], active_faster));
             }
             matchup_matrix.push(matchup_vec);
         }
@@ -769,8 +769,7 @@ impl BattleInstance {
         true
     }
 
-    // TODO add volatile status checks
-    fn is_first_faster(
+    fn get_faster_move(
         &self,
         creatures: &[Vec<Creature>; 2],
         combat_actions: &[CombatAction; 2],
@@ -790,9 +789,9 @@ impl BattleInstance {
         if first_priority == second_priority {
             self.get_faster_creature(creatures)
         } else if first_priority > second_priority {
-            true
-        } else {
             false
+        } else {
+            true
         }
     }
     fn get_faster_creature(&self, creatures: &[Vec<Creature>; 2]) -> bool {
@@ -801,9 +800,9 @@ impl BattleInstance {
         if speed_0 == speed_1 {
             random_roll()
         } else if speed_0 > speed_1 {
-            true
-        } else {
             false
+        } else {
+            true
         }
     }
 
