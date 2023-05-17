@@ -463,6 +463,38 @@ impl BattleInstance {
                 .1 as f32
     }
 
+
+    fn get_matchup_matrix_with_highest_damage_move(
+        &self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) {
+        let mut battle_instance = self.clone();
+        let mut matchup_matrix = vec![];
+        for i in 0..creature_instances[0].len() {
+            let mut matchup_vec = vec![];
+            for j in 0..creature_instances[0].len() {
+                battle_instance.battler_ids = [i, j];
+                let active = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                    battle_settings,
+                    creatures,
+                    creature_instances,
+                    actioner,
+                );
+                let passive = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                    battle_settings,
+                    creatures,
+                    creature_instances,
+                    !actioner,
+                );
+                let first_faster = battle_instance.get_faster_creature(creatures);
+                matchup_vec.push(([active, passive], first_faster));
+            }
+            matchup_matrix.push(matchup_vec);
+        }
+    }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
     fn check_move_damage(
