@@ -476,20 +476,21 @@ impl BattleInstance {
             let mut matchup_vec = vec![];
             for j in 0..creature_instances[0].len() {
                 battle_instance.battler_ids = [i, j];
-                let active = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                let first = battle_instance.get_turns_to_ko_with_highest_damage_move(
                     battle_settings,
                     creatures,
                     creature_instances,
-                    actioner,
+                    false,
                 );
-                let passive = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                let second = battle_instance.get_turns_to_ko_with_highest_damage_move(
                     battle_settings,
                     creatures,
                     creature_instances,
-                    !actioner,
+                    true,
                 );
-                let active_faster = battle_instance.get_faster_creature(creatures) == actioner;
-                matchup_vec.push(([active, passive], active_faster));
+                // currently assume that no move priority exists
+                let faster_creature = battle_instance.get_faster_creature(creatures);
+                matchup_vec.push(([first, second], faster_creature));
             }
             matchup_matrix.push(matchup_vec);
         }
