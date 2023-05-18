@@ -469,8 +469,7 @@ impl BattleInstance {
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
         creature_instances: &[Vec<CreatureInstance>; 2],
-        actioner: bool,
-    ) {
+    ) -> Vec<Vec<([f32; 2], bool)>> {
         let mut battle_instance = self.clone();
         let mut matchup_matrix = vec![];
         for i in 0..creature_instances[0].len() {
@@ -494,6 +493,7 @@ impl BattleInstance {
             }
             matchup_matrix.push(matchup_vec);
         }
+        matchup_matrix
     }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
