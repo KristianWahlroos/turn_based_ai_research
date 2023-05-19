@@ -463,6 +463,71 @@ impl BattleInstance {
                 .1 as f32
     }
 
+    fn get_turns_to_win_with_highest_damage_move(
+        &self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) {
+        let health_vec = vec![1.0; creature_instances[0].len()];
+        // healths[side][creature_index]
+        let mut healths = vec![health_vec.clone(), health_vec.clone()];
+        let matchup_matrix = self.get_matchup_matrix_with_highest_damage_move(
+            battle_settings,
+            creatures,
+            creature_instances,
+        );
+        // Take matchup matrix
+        // Remove from healths based on matchup matrix.
+        ///// Based on what?
+        ///// Decide a current battler
+        ///// Start from speed. Do damage for faster, then if the other survives -> do damage for him
+
+        // Decide a current battler
+        let mut current_battlers = self.battler_ids;
+
+        for i in 0..1000 {
+            if i == 999 {
+                panic!("Loop is stuck");
+            }
+            // Start from speed
+            let current_matchup = matchup_matrix[current_battlers[actioner as usize]]
+                [current_battlers[!actioner as usize]];
+            // let faster_side = current_matchup.1; // correct
+            // we should first lower the slower sides health
+            healths[!current_matchup.1 as usize][current_battlers[!current_matchup.1 as usize]] -=
+                1.0 / current_matchup.0[current_matchup.1 as usize];
+            if healths[!current_matchup.1 as usize][current_battlers[!current_matchup.1 as usize]]
+                <= 0.0
+            {
+                // forced switch here as long as only damage moves exists
+
+                // Use the simplest forced switch for now
+                current_battlers[!current_matchup.1 as usize] += 1;
+                // Check naively that if everything is fainted
+                if current_battlers[!current_matchup.1 as usize] == creature_instances[0].len() {
+                    break; // We have determined the best path
+                           // Probably should return some interesting data
+                }
+            }
+            healths[current_matchup.1 as usize][current_battlers[current_matchup.1 as usize]] -=
+                1.0 / current_matchup.0[!current_matchup.1 as usize];
+            if healths[current_matchup.1 as usize][current_battlers[current_matchup.1 as usize]]
+                <= 0.0
+            {
+                // forced switch here as long as only damage moves exists
+
+                // Use the simplest forced switch for now
+                current_battlers[current_matchup.1 as usize] += 1;
+                // Check naively that if everything is fainted
+                if current_battlers[current_matchup.1 as usize] == creature_instances[0].len() {
+                    break; // We have determined the best path
+                           // Probably should return some interesting data
+                }
+            }
+        }
+    }
 
     fn get_matchup_matrix_with_highest_damage_move(
         &self,
