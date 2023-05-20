@@ -449,6 +449,7 @@ impl BattleInstance {
         (highest_physical, highest_special)
     }
 
+    /// Get turns to ko non-actioner with moves that do purely damage
     fn get_turns_to_ko_with_highest_damage_move(
         &self,
         battle_settings: &BattleSettings,
