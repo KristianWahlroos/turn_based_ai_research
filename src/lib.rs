@@ -464,17 +464,18 @@ impl BattleInstance {
                 .1 as f32
     }
 
+    // currently assume that both sides have the same AI
     fn get_turns_to_win_with_highest_damage_move(
         &self,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
         creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
-    ) {
+    ) -> (usize, bool) {
         let health_vec = vec![1.0; creature_instances[0].len()];
         // healths[side][creature_index]
         let mut healths = vec![health_vec.clone(), health_vec.clone()];
-        let matchup_matrix = self.get_matchup_matrix_with_highest_damage_move(
+        let matchup_matrix = &self.get_matchup_matrix_with_highest_damage_move(
             battle_settings,
             creatures,
             creature_instances,
@@ -487,8 +488,8 @@ impl BattleInstance {
 
         // Decide a current battler
         let mut current_battlers = self.battler_ids;
-
-        for i in 0..1000 {
+        let mut i = 0;
+        loop {
             if i == 999 {
                 panic!("Loop is stuck");
             }
@@ -503,13 +504,19 @@ impl BattleInstance {
                 <= 0.0
             {
                 // forced switch here as long as only damage moves exists
-
-                // Use the simplest forced switch for now
-                current_battlers[!current_matchup.1 as usize] += 1;
-                // Check naively that if everything is fainted
-                if current_battlers[!current_matchup.1 as usize] == creature_instances[0].len() {
-                    break; // We have determined the best path
-                           // Probably should return some interesting data
+                let forced_switch = self.get_strongest_forced_switch(
+                    matchup_matrix,
+                    &healths,
+                    !actioner,
+                    current_matchup.1 as usize,
+                );
+                if forced_switch.is_none() {
+                    // The best path according the method ends here
+                    // return number of turns and the winning side
+                    // (refactor potential): OR did the actioner win
+                    return (i, current_matchup.1);
+                } else {
+                    current_battlers[current_matchup.1 as usize] = forced_switch.unwrap().1
                 }
             }
             healths[current_matchup.1 as usize][current_battlers[current_matchup.1 as usize]] -=
@@ -518,15 +525,22 @@ impl BattleInstance {
                 <= 0.0
             {
                 // forced switch here as long as only damage moves exists
-
-                // Use the simplest forced switch for now
-                current_battlers[current_matchup.1 as usize] += 1;
-                // Check naively that if everything is fainted
-                if current_battlers[current_matchup.1 as usize] == creature_instances[0].len() {
-                    break; // We have determined the best path
-                           // Probably should return some interesting data
+                let forced_switch = self.get_strongest_forced_switch(
+                    matchup_matrix,
+                    &healths,
+                    actioner,
+                    current_matchup.1 as usize,
+                );
+                if forced_switch.is_none() {
+                    // The best path according the method ends here
+                    // return number of turns and the winning side
+                    // (refactor potential): OR did the actioner win
+                    return (i, current_matchup.1);
+                } else {
+                    current_battlers[current_matchup.1 as usize] = forced_switch.unwrap().1
                 }
             }
+            i += 1;
         }
     }
 
