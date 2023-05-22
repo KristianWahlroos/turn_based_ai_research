@@ -562,6 +562,36 @@ impl BattleInstance {
         }
         matchup_matrix
     }
+
+    fn get_strongest_forced_switch(
+        &self,
+        matchup_matrix: &Vec<Vec<([f32; 2], bool)>>,
+        healths: &Vec<Vec<f32>>,
+        actioner: bool,
+        other_id: usize,
+    ) -> Option<(f32, usize)> {
+        // Sometimes it is better to save a creature against some other creature.
+        // So not even close to optimal
+
+        let mut best_matchup_for_actioner: Option<(f32, usize)> = None;
+        for actioner_id in 0..healths[0].len() {
+            if healths[actioner as usize][actioner_id] > 0.0 {
+                let matchup = if !actioner {
+                    matchup_matrix[actioner_id][other_id]
+                } else {
+                    matchup_matrix[other_id][actioner_id]
+                };
+                let matchup_calc =
+                    (1.0 / matchup.0[actioner as usize]) - (1.0 / matchup.0[!actioner as usize]);
+                if best_matchup_for_actioner == None
+                    || best_matchup_for_actioner.unwrap().0 < matchup_calc
+                {
+                    best_matchup_for_actioner = Some((matchup_calc, actioner_id));
+                }
+            }
+        }
+        best_matchup_for_actioner
+    }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
     fn check_move_damage(
