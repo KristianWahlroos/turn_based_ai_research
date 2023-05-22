@@ -111,6 +111,8 @@ fn strongest_attack_ai() {
                 &[combat_action_1.clone(), combat_action_2.clone()],
             );
             match battle_instance.handle_interrupts(
+                &battle_settings,
+                &creatures,
                 &mut creature_instances,
                 interrupt_opt,
                 &strongest_attack_ai,
@@ -169,6 +171,8 @@ fn strongest_attack_ai() {
                 &[combat_action_1.clone(), combat_action_2.clone()],
             );
             match battle_instance_2.handle_interrupts(
+                &battle_settings,
+                &creatures,
                 &mut creature_instances_2,
                 interrupt_opt,
                 &random_ai,
@@ -254,6 +258,8 @@ fn min_max_ai() {
                 &[combat_action_1.clone(), combat_action_2.clone()],
             );
             match battle_instance.handle_interrupts(
+                &battle_settings,
+                &creatures,
                 &mut creature_instances,
                 interrupt_opt,
                 &min_max_ai,
@@ -312,6 +318,8 @@ fn min_max_ai() {
                 &[combat_action_1.clone(), combat_action_2.clone()],
             );
             match battle_instance_2.handle_interrupts(
+                &battle_settings,
+                &creatures,
                 &mut creature_instances_2,
                 interrupt_opt,
                 &strongest_ai,
@@ -418,6 +426,8 @@ fn team_generation_test() {
                 &[combat_action_1.clone(), combat_action_2.clone()],
             );
             match battle_instance.handle_interrupts(
+                &battle_settings,
+                &creatures,
                 &mut creature_instances,
                 interrupt_opt,
                 &random_ai_a,

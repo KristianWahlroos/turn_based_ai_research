@@ -8,7 +8,14 @@ pub trait AI {
         creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> CombatAction;
-    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize;
+    fn get_forced_switch(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) -> usize;
 }
 
 pub struct RandomAI {}
@@ -25,9 +32,16 @@ impl AI for RandomAI {
         CombatAction::Attack(rand::random::<u8>() % 4)
     }
     /// Assumption that if all fainted we don't force switch
-    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
-        for switch_to in 0..creature_instances.len() {
-            if !creature_instances[switch_to].is_fainted() {
+    fn get_forced_switch(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        side: bool,
+    ) -> usize {
+        for switch_to in 0..creature_instances[side as usize].len() {
+            if !creature_instances[side as usize][switch_to].is_fainted() {
                 return switch_to;
             }
         }
@@ -53,9 +67,16 @@ impl AI for StrongestAttackAI {
         )
     }
     /// Assumption that if all fainted we don't force switch
-    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
-        for switch_to in 0..creature_instances.len() {
-            if !creature_instances[switch_to].is_fainted() {
+    fn get_forced_switch(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        side: bool,
+    ) -> usize {
+        for switch_to in 0..creature_instances[side as usize].len() {
+            if !creature_instances[side as usize][switch_to].is_fainted() {
                 return switch_to;
             }
         }
@@ -90,9 +111,16 @@ impl AI for MinMaxMovesAI {
         )
     }
     /// Assumption that if all fainted we don't force switch
-    fn get_forced_switch(&self, creature_instances: &Vec<CreatureInstance>) -> usize {
-        for switch_to in 0..creature_instances.len() {
-            if !creature_instances[switch_to].is_fainted() {
+    fn get_forced_switch(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        side: bool,
+    ) -> usize {
+        for switch_to in 0..creature_instances[side as usize].len() {
+            if !creature_instances[side as usize][switch_to].is_fainted() {
                 return switch_to;
             }
         }
@@ -128,6 +156,8 @@ fn min_max(
                 &combat_actions,
             );
             match battle_instance_cloned.handle_interrupts(
+                &battle_settings,
+                creatures,
                 &mut creature_instances_cloned,
                 interrupt_opt,
                 &ai_for_forced_switch,

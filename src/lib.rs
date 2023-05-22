@@ -227,6 +227,8 @@ impl BattleInstance {
 
     pub fn handle_interrupts<AiA: AI, AiB: AI>(
         &mut self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
         creature_instances: &mut [Vec<CreatureInstance>; 2],
         interrupt_opt: Option<Interrupt>,
         ai_a: &AiA,
@@ -235,12 +237,24 @@ impl BattleInstance {
         Ok(match interrupt_opt {
             Some(Interrupt::AFainted) => self.switch(
                 creature_instances,
-                ai_a.get_forced_switch(&creature_instances[0]),
+                ai_a.get_forced_switch(
+                    &self,
+                    battle_settings,
+                    creatures,
+                    &creature_instances,
+                    false,
+                ),
                 0,
             ),
             Some(Interrupt::BFainted) => self.switch(
                 creature_instances,
-                ai_b.get_forced_switch(&creature_instances[1]),
+                ai_b.get_forced_switch(
+                    &self,
+                    battle_settings,
+                    creatures,
+                    &creature_instances,
+                    true,
+                ),
                 1,
             ),
             Some(Interrupt::AWon) | Some(Interrupt::BWon) => {
