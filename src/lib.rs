@@ -628,8 +628,7 @@ impl BattleInstance {
                 } else {
                     matchup_matrix[other_id][actioner_id]
                 };
-                let matchup_calc =
-                    (1.0 / matchup.0[actioner as usize]) - (1.0 / matchup.0[!actioner as usize]);
+                let matchup_calc = Self::get_matchup_value(matchup, actioner);
                 if best_matchup_for_actioner == None
                     || best_matchup_for_actioner.unwrap().0 < matchup_calc
                 {
@@ -638,6 +637,10 @@ impl BattleInstance {
             }
         }
         best_matchup_for_actioner
+    }
+
+    fn get_matchup_value(matchup: ([f32; 2], bool), actioner: bool) -> f32 {
+        (1.0 / matchup.0[actioner as usize]) - (1.0 / matchup.0[!actioner as usize])
     }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
