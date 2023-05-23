@@ -486,9 +486,7 @@ impl BattleInstance {
         creature_instances: &[Vec<CreatureInstance>; 2],
         actioner: bool,
     ) -> (usize, bool) {
-        let health_vec = vec![1.0; creature_instances[0].len()];
-        // healths[side][creature_index]
-        let mut healths = vec![health_vec.clone(), health_vec.clone()];
+        let mut health_percentages = self.get_health_percentages(creature_instances, creatures);
         let matchup_matrix = &self.get_matchup_matrix_with_highest_damage_move(
             battle_settings,
             creatures,
@@ -512,15 +510,17 @@ impl BattleInstance {
                 [current_battlers[!actioner as usize]];
             // let faster_side = current_matchup.1; // correct
             // we should first lower the slower sides health
-            healths[!current_matchup.1 as usize][current_battlers[!current_matchup.1 as usize]] -=
+            health_percentages[!current_matchup.1 as usize]
+                [current_battlers[!current_matchup.1 as usize]] -=
                 1.0 / current_matchup.0[current_matchup.1 as usize];
-            if healths[!current_matchup.1 as usize][current_battlers[!current_matchup.1 as usize]]
+            if health_percentages[!current_matchup.1 as usize]
+                [current_battlers[!current_matchup.1 as usize]]
                 <= 0.0
             {
                 // forced switch here as long as only damage moves exists
                 let forced_switch = self.get_strongest_forced_switch(
                     matchup_matrix,
-                    &healths,
+                    &health_percentages,
                     !actioner,
                     current_matchup.1 as usize,
                 );
@@ -533,15 +533,17 @@ impl BattleInstance {
                     current_battlers[current_matchup.1 as usize] = forced_switch.unwrap().1
                 }
             }
-            healths[current_matchup.1 as usize][current_battlers[current_matchup.1 as usize]] -=
+            health_percentages[current_matchup.1 as usize]
+                [current_battlers[current_matchup.1 as usize]] -=
                 1.0 / current_matchup.0[!current_matchup.1 as usize];
-            if healths[current_matchup.1 as usize][current_battlers[current_matchup.1 as usize]]
+            if health_percentages[current_matchup.1 as usize]
+                [current_battlers[current_matchup.1 as usize]]
                 <= 0.0
             {
                 // forced switch here as long as only damage moves exists
                 let forced_switch = self.get_strongest_forced_switch(
                     matchup_matrix,
-                    &healths,
+                    &health_percentages,
                     actioner,
                     current_matchup.1 as usize,
                 );
@@ -556,6 +558,23 @@ impl BattleInstance {
             }
             i += 1;
         }
+    }
+
+    pub fn get_health_percentages(
+        &self,
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        creatures: &[Vec<Creature>; 2],
+    ) -> [Vec<f32>; 2] {
+        let mut health_percentages = [vec![], vec![]];
+        for side in 0..2 {
+            for i in 0..creature_instances[0].len() {
+                health_percentages[side].push(
+                    creature_instances[side][i].current_health as f32
+                        / creatures[side][i].stats.hp as f32,
+                )
+            }
+        }
+        health_percentages
     }
 
     fn get_matchup_matrix_with_highest_damage_move(
@@ -594,7 +613,7 @@ impl BattleInstance {
     fn get_strongest_forced_switch(
         &self,
         matchup_matrix: &Vec<Vec<([f32; 2], bool)>>,
-        healths: &Vec<Vec<f32>>,
+        healths: &[Vec<f32>; 2],
         actioner: bool,
         other_id: usize,
     ) -> Option<(f32, usize)> {
