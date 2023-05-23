@@ -84,6 +84,51 @@ impl AI for StrongestAttackAI {
     }
 }
 
+pub struct StrongestAttackAIWithBetterSwitching {}
+
+impl AI for StrongestAttackAIWithBetterSwitching {
+    fn get_action(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        actioner: bool,
+    ) -> CombatAction {
+        CombatAction::Attack(
+            battle_instance
+                .get_highest_damage_move(&battle_settings, &creatures, actioner)
+                .0 as u8,
+        )
+    }
+    /// Assumption that if all fainted we don't force switch
+    fn get_forced_switch(
+        &self,
+        battle_instance: &BattleInstance,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        creature_instances: &[Vec<CreatureInstance>; 2],
+        side: bool,
+    ) -> usize {
+        let health_percentages =
+            battle_instance.get_health_percentages(creature_instances, creatures);
+        let matchup_matrix = &battle_instance.get_matchup_matrix_with_highest_damage_move(
+            battle_settings,
+            creatures,
+            creature_instances,
+        );
+        battle_instance
+            .get_strongest_forced_switch(
+                matchup_matrix,
+                &health_percentages,
+                side,
+                battle_instance.battler_ids[!side as usize],
+            )
+            .expect("that if all fainted we don't force switch")
+            .1
+    }
+}
+
 pub struct MinMaxMovesAI {
     pub depth: u8,
 }
