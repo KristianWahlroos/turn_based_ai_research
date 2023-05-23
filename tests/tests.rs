@@ -218,6 +218,158 @@ fn strongest_attack_ai() {
     )
 }
 #[test]
+fn strongest_attack_ai_with_forced_switch() {
+    let mut creature_generator = CreatureGenerator::default();
+    creature_generator.move_generation_settings.stats_mod_chance = 0;
+    creature_generator.move_generation_settings.missable_ratio = 0;
+    let mut times_better_switch_won_twice = 0;
+    let mut times_worse_switch_won_twice = 0;
+    for i in 0..6000 {
+        let (mut creature_instances, creatures, mut battle_instance, battle_settings) =
+            setup(&creature_generator.clone(), 6);
+        let strongest_attack_ai_forced_switch = StrongestAttackAIWithBetterSwitching {};
+        let stronged_attack_ai_bad_switch = StrongestAttackAI {};
+        let mut creature_instances_2 = creature_instances.clone();
+        let mut battle_instance_2 = battle_instance.clone();
+
+        let mut combat_action_1 = strongest_attack_ai_forced_switch.get_action(
+            &battle_instance,
+            &battle_settings,
+            &creatures,
+            &creature_instances,
+            false,
+        );
+        let mut combat_action_2 = stronged_attack_ai_bad_switch.get_action(
+            &battle_instance,
+            &battle_settings,
+            &creatures,
+            &creature_instances,
+            true,
+        );
+        let mut better_switch_ai_won = false;
+        let mut combat_action_list = vec![];
+
+        for i in 0..500 {
+            combat_action_list.push(combat_action_1.clone());
+            combat_action_list.push(combat_action_2.clone());
+            let interrupt_opt = battle_instance.turn(
+                &battle_settings,
+                &creatures,
+                &mut creature_instances,
+                &[combat_action_1.clone(), combat_action_2.clone()],
+            );
+            match battle_instance.handle_interrupts(
+                &battle_settings,
+                &creatures,
+                &mut creature_instances,
+                interrupt_opt,
+                &strongest_attack_ai_forced_switch,
+                &stronged_attack_ai_bad_switch,
+            ) {
+                Ok(_) => (),
+                Err(interrupt) => match interrupt {
+                    Interrupt::AWon => {
+                        better_switch_ai_won = true;
+                        break;
+                    }
+                    Interrupt::BWon => {
+                        better_switch_ai_won = false;
+                        break;
+                    }
+                    _ => panic!("faints should be handled already"),
+                },
+            }
+            combat_action_1 = strongest_attack_ai_forced_switch.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                false,
+            );
+            combat_action_2 = stronged_attack_ai_bad_switch.get_action(
+                &battle_instance,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                true,
+            );
+        }
+        combat_action_1 = stronged_attack_ai_bad_switch.get_action(
+            &battle_instance_2,
+            &battle_settings,
+            &creatures,
+            &creature_instances,
+            false,
+        );
+        combat_action_2 = strongest_attack_ai_forced_switch.get_action(
+            &battle_instance_2,
+            &battle_settings,
+            &creatures,
+            &creature_instances,
+            true,
+        );
+        combat_action_list.push(CombatAction::Switch(0));
+        for i in 0..1000 {
+            combat_action_list.push(combat_action_1.clone());
+            combat_action_list.push(combat_action_2.clone());
+            let interrupt_opt = battle_instance_2.turn(
+                &battle_settings,
+                &creatures,
+                &mut creature_instances_2,
+                &[combat_action_1.clone(), combat_action_2.clone()],
+            );
+            match battle_instance_2.handle_interrupts(
+                &battle_settings,
+                &creatures,
+                &mut creature_instances_2,
+                interrupt_opt,
+                &stronged_attack_ai_bad_switch,
+                &strongest_attack_ai_forced_switch,
+            ) {
+                Ok(_) => (),
+                Err(interrupt) => match interrupt {
+                    Interrupt::AWon => {
+                        if !better_switch_ai_won {
+                            times_worse_switch_won_twice += 1
+                        }
+                        break;
+                    }
+                    Interrupt::BWon => {
+                        if better_switch_ai_won {
+                            times_better_switch_won_twice += 1
+                        }
+                        break;
+                    }
+                    _ => panic!("faints should be handled already"),
+                },
+            }
+            if i == 999 {
+                panic!("should not be 999 when there are only attacks");
+            }
+            combat_action_1 = stronged_attack_ai_bad_switch.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                false,
+            );
+            combat_action_2 = strongest_attack_ai_forced_switch.get_action(
+                &battle_instance_2,
+                &battle_settings,
+                &creatures,
+                &creature_instances,
+                true,
+            );
+        }
+    }
+    println!(
+        "Times better forced switch AI won both sides against random AI: {},Times worse forced switch AI won both sides against random AI: {}",
+        times_better_switch_won_twice,
+        times_worse_switch_won_twice
+    );
+    assert!(times_better_switch_won_twice * 4 > times_worse_switch_won_twice);
+}
+#[test]
 fn min_max_ai() {
     let mut creature_generator = CreatureGenerator::default();
     creature_generator.move_generation_settings.stats_mod_chance = 0;
