@@ -493,6 +493,7 @@ impl BattleInstance {
                 .1 as f32
     }
 
+    // FIXME: potentially not working after matchup matrix has been changed
     // currently assume that both sides have the same AI
     fn get_turns_to_win_with_highest_damage_move(
         &self,
@@ -502,11 +503,8 @@ impl BattleInstance {
         actioner: bool,
     ) -> (usize, bool) {
         let mut health_percentages = self.get_health_percentages(creature_instances, creatures);
-        let matchup_matrix = &self.get_matchup_matrix_with_highest_damage_move(
-            battle_settings,
-            creatures,
-            creature_instances,
-        );
+        let matchup_matrix =
+            &self.get_matchup_matrix_with_highest_damage_move(battle_settings, creatures);
         // Take matchup matrix
         // Remove from healths based on matchup matrix.
         ///// Based on what?
@@ -596,24 +594,21 @@ impl BattleInstance {
         &self,
         battle_settings: &BattleSettings,
         creatures: &[Vec<Creature>; 2],
-        creature_instances: &[Vec<CreatureInstance>; 2],
     ) -> Vec<Vec<([f32; 2], bool)>> {
         let mut battle_instance = self.clone();
         let mut matchup_matrix = vec![];
-        for i in 0..creature_instances[0].len() {
+        for i in 0..creatures[0].len() {
             let mut matchup_vec = vec![];
-            for j in 0..creature_instances[0].len() {
+            for j in 0..creatures[0].len() {
                 battle_instance.battler_ids = [i, j];
-                let first = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                let first = battle_instance.get_turns_to_ko_from_max_with_highest_damage_move(
                     battle_settings,
                     creatures,
-                    creature_instances,
                     false,
                 );
-                let second = battle_instance.get_turns_to_ko_with_highest_damage_move(
+                let second = battle_instance.get_turns_to_ko_from_max_with_highest_damage_move(
                     battle_settings,
                     creatures,
-                    creature_instances,
                     true,
                 );
                 // currently assume that no move priority exists
@@ -628,7 +623,7 @@ impl BattleInstance {
     fn get_strongest_forced_switch(
         &self,
         matchup_matrix: &Vec<Vec<([f32; 2], bool)>>,
-        healths: &[Vec<f32>; 2],
+        health_percentage: &[Vec<f32>; 2],
         actioner: bool,
         other_id: usize,
     ) -> Option<(f32, usize)> {
@@ -636,18 +631,31 @@ impl BattleInstance {
         // So not even close to optimal
 
         let mut best_matchup_for_actioner: Option<(f32, usize)> = None;
-        for actioner_id in 0..healths[0].len() {
-            if healths[actioner as usize][actioner_id] > 0.0 {
-                let matchup = if !actioner {
-                    matchup_matrix[actioner_id][other_id]
+        for actioner_id in 0..health_percentage[0].len() {
+            if health_percentage[actioner as usize][actioner_id] > 0.0 {
+                let (matchup, matchup_health_percentages) = if !actioner {
+                    (
+                        matchup_matrix[actioner_id][other_id],
+                        [
+                            health_percentage[0][actioner_id],
+                            health_percentage[1][other_id],
+                        ],
+                    )
                 } else {
-                    matchup_matrix[other_id][actioner_id]
+                    (
+                        matchup_matrix[other_id][actioner_id],
+                        [
+                            health_percentage[0][other_id],
+                            health_percentage[1][actioner_id],
+                        ],
+                    )
                 };
-                let matchup_calc = Self::get_matchup_value(matchup, actioner);
+                let matchup_calc =
+                    Self::get_matchup_value(matchup, matchup_health_percentages, actioner);
                 // TODO: Consider using log already
                 // println!(
-                //     "matchup: {:?}, matchup_calc: {}, actioner_id {}",
-                //     matchup, matchup_calc, actioner_id
+                //     "matchup: {:?}, matchup_calc: {}, actioner_id {}, healths: {:?}",
+                //     matchup, matchup_calc, actioner_id, matchup_health_percentages
                 // );
                 if best_matchup_for_actioner == None
                     || best_matchup_for_actioner.unwrap().0 < matchup_calc
@@ -660,22 +668,19 @@ impl BattleInstance {
     }
 
     /// Positive matchup is considered win for the actioner
-    fn get_matchup_value(matchup: ([f32; 2], bool), actioner: bool) -> f32 {
+    fn get_matchup_value(matchup: ([f32; 2], bool), healths: [f32; 2], actioner: bool) -> f32 {
         // There is small advantage gained for example from 0.1 that could be considered somehow
         // We ceil, because there is huge difference between for example 0.95 and 1.05 turns.
-        let faster_trimmed = matchup.0[matchup.1 as usize].ceil() as i32;
-        let slower_trimmed = matchup.0[!matchup.1 as usize].ceil() as i32;
+        let faster_trimmed =
+            (matchup.0[matchup.1 as usize] * healths[matchup.1 as usize]).ceil() as i32;
+        let slower_trimmed =
+            (matchup.0[!matchup.1 as usize] * healths[!matchup.1 as usize]).ceil() as i32;
         // We count advantage for the faster
         let matchup_value_magnitude = if faster_trimmed <= slower_trimmed {
             (faster_trimmed - 1 - slower_trimmed) as f32 / (slower_trimmed as f32)
         } else {
             (faster_trimmed - slower_trimmed) as f32 / (faster_trimmed as f32)
         };
-        // TODO: Consider using log already
-        // print!(
-        //     "magnitude: {}, decimal_value: {}    ----    ",
-        //     matchup_value_magnitude, decimal_value
-        // );
         if actioner == matchup.1 {
             -matchup_value_magnitude
         } else {

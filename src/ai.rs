@@ -112,11 +112,8 @@ impl AI for StrongestAttackAIWithBetterSwitching {
     ) -> usize {
         let health_percentages =
             battle_instance.get_health_percentages(creature_instances, creatures);
-        let matchup_matrix = &battle_instance.get_matchup_matrix_with_highest_damage_move(
-            battle_settings,
-            creatures,
-            creature_instances,
-        );
+        let matchup_matrix = &battle_instance
+            .get_matchup_matrix_with_highest_damage_move(battle_settings, creatures);
         battle_instance
             .get_strongest_forced_switch(
                 matchup_matrix,
