@@ -629,6 +629,11 @@ impl BattleInstance {
                     matchup_matrix[other_id][actioner_id]
                 };
                 let matchup_calc = Self::get_matchup_value(matchup, actioner);
+                // TODO: Consider using log already
+                // println!(
+                //     "matchup: {:?}, matchup_calc: {}, actioner_id {}",
+                //     matchup, matchup_calc, actioner_id
+                // );
                 if best_matchup_for_actioner == None
                     || best_matchup_for_actioner.unwrap().0 < matchup_calc
                 {
@@ -639,8 +644,28 @@ impl BattleInstance {
         best_matchup_for_actioner
     }
 
+    /// Positive matchup is considered win for the actioner
     fn get_matchup_value(matchup: ([f32; 2], bool), actioner: bool) -> f32 {
-        (1.0 / matchup.0[actioner as usize]) - (1.0 / matchup.0[!actioner as usize])
+        // There is small advantage gained for example from 0.1 that could be considered somehow
+        // We ceil, because there is huge difference between for example 0.95 and 1.05 turns.
+        let faster_trimmed = matchup.0[matchup.1 as usize].ceil() as i32;
+        let slower_trimmed = matchup.0[!matchup.1 as usize].ceil() as i32;
+        // We count advantage for the faster
+        let matchup_value_magnitude = if faster_trimmed <= slower_trimmed {
+            (faster_trimmed - 1 - slower_trimmed) as f32 / (slower_trimmed as f32)
+        } else {
+            (faster_trimmed - slower_trimmed) as f32 / (faster_trimmed as f32)
+        };
+        // TODO: Consider using log already
+        // print!(
+        //     "magnitude: {}, decimal_value: {}    ----    ",
+        //     matchup_value_magnitude, decimal_value
+        // );
+        if actioner == matchup.1 {
+            -matchup_value_magnitude
+        } else {
+            matchup_value_magnitude
+        }
     }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
