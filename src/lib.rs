@@ -478,6 +478,21 @@ impl BattleInstance {
                 .1 as f32
     }
 
+    /// Get turns to ko non-actioner with moves that do purely damage
+    fn get_turns_to_ko_from_max_with_highest_damage_move(
+        &self,
+        battle_settings: &BattleSettings,
+        creatures: &[Vec<Creature>; 2],
+        actioner: bool,
+    ) -> f32 {
+        (creatures[!actioner as usize][self.battler_ids[!actioner as usize]]
+            .stats
+            .hp as f32)
+            / self
+                .get_highest_damage_move(battle_settings, creatures, actioner)
+                .1 as f32
+    }
+
     // currently assume that both sides have the same AI
     fn get_turns_to_win_with_highest_damage_move(
         &self,
