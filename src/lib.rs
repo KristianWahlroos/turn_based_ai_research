@@ -672,9 +672,9 @@ impl BattleInstance {
         // There is small advantage gained for example from 0.1 that could be considered somehow
         // We ceil, because there is huge difference between for example 0.95 and 1.05 turns.
         let faster_trimmed =
-            (matchup.0[matchup.1 as usize] * healths[matchup.1 as usize]).ceil() as i32;
+            (matchup.0[matchup.1 as usize] * healths[!matchup.1 as usize]).ceil() as i32;
         let slower_trimmed =
-            (matchup.0[!matchup.1 as usize] * healths[!matchup.1 as usize]).ceil() as i32;
+            (matchup.0[!matchup.1 as usize] * healths[matchup.1 as usize]).ceil() as i32;
         // We count advantage for the faster
         let matchup_value_magnitude = if faster_trimmed <= slower_trimmed {
             (faster_trimmed - 1 - slower_trimmed) as f32 / (slower_trimmed as f32)
