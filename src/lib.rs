@@ -669,15 +669,13 @@ impl BattleInstance {
 
     /// Positive matchup is considered win for the actioner
     fn get_matchup_value(matchup: ([f32; 2], bool), healths: [f32; 2], actioner: bool) -> f32 {
-        // There is small advantage gained for example from 0.1 that could be considered somehow
-        // We ceil, because there is huge difference between for example 0.95 and 1.05 turns.
-        let faster_trimmed = (matchup.0[matchup.1 as usize] * healths[!matchup.1 as usize]).ceil();
-        let slower_trimmed = (matchup.0[!matchup.1 as usize] * healths[matchup.1 as usize]).ceil();
+        let faster = (matchup.0[matchup.1 as usize] * healths[!matchup.1 as usize]) - 0.000024;
+        let slower = (matchup.0[!matchup.1 as usize] * healths[matchup.1 as usize]) - 0.000024;
         // We count advantage for the faster
-        let matchup_value_magnitude = if faster_trimmed <= slower_trimmed {
-            (faster_trimmed - 1.0 - slower_trimmed) / slower_trimmed
+        let matchup_value_magnitude = if faster <= slower || faster.ceil() == slower.ceil() {
+            -healths[matchup.1 as usize] + ((faster.ceil() - 1.0) / matchup.0[!matchup.1 as usize])
         } else {
-            (faster_trimmed - slower_trimmed) / faster_trimmed
+            healths[!matchup.1 as usize] - ((slower.ceil()) / matchup.0[matchup.1 as usize])
         };
         if actioner == matchup.1 {
             -matchup_value_magnitude
