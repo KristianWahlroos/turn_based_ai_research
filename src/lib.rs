@@ -683,6 +683,155 @@ impl BattleInstance {
             matchup_value_magnitude
         }
     }
+
+    // placeholder names
+    fn get_forced_switch_with_min_maxing(
+        &self,
+        battlers: [usize; 2],
+        matchup_matrix: &Vec<Vec<([f32; 2], bool)>>,
+        mut healths: [Vec<f32>; 2],
+        available_creatures: [Vec<usize>; 2],
+        minimaxing_side: bool,
+    ) -> Option<f32> {
+        let value = Self::get_matchup_value(
+            matchup_matrix[battlers[0]][battlers[1]],
+            [healths[0][battlers[0]], healths[1][battlers[1]]],
+            minimaxing_side,
+        );
+        if value < 0.0 {
+            // this side fainted
+            healths[minimaxing_side as usize][battlers[minimaxing_side as usize]] = 0.0;
+            healths[!minimaxing_side as usize][battlers[!minimaxing_side as usize]] = -value;
+            if available_creatures[minimaxing_side as usize].len() == 0 {
+                // Weak and Strong creatures might have different value
+                // We only care inside a video game about this.
+                let health_sum = healths[!minimaxing_side as usize]
+                    .iter()
+                    .filter(|x| **x > 0.0)
+                    .sum::<f32>();
+                if minimaxing_side {
+                    return Some(health_sum);
+                } else {
+                    return Some(-health_sum);
+                }
+            } else {
+                let mut best_sum: Option<f32> = None;
+                for i in 0..available_creatures[minimaxing_side as usize].len() {
+                    let new_battler = available_creatures[minimaxing_side as usize][i];
+                    let mut new_battlers = battlers.clone();
+                    new_battlers[minimaxing_side as usize] = new_battler;
+                    let mut updated_available_creatures = available_creatures.clone();
+                    updated_available_creatures[minimaxing_side as usize].remove(i);
+                    let health_sum = self
+                        .get_forced_switch_with_min_maxing(
+                            new_battlers,
+                            matchup_matrix,
+                            healths.clone(),
+                            updated_available_creatures,
+                            minimaxing_side,
+                        )
+                        .unwrap();
+                    if best_sum.is_none()
+                        || (minimaxing_side && best_sum.unwrap() > health_sum)
+                        || (!minimaxing_side && best_sum.unwrap() < health_sum)
+                    {
+                        best_sum = Some(health_sum);
+                    }
+                }
+                return best_sum;
+            }
+        } else if value > 0.0 {
+            // the opposite side fainted
+            healths[!minimaxing_side as usize][battlers[!minimaxing_side as usize]] = 0.0;
+            healths[minimaxing_side as usize][battlers[minimaxing_side as usize]] = value;
+            if available_creatures[!minimaxing_side as usize].len() == 0 {
+                // Weak and Strong creatures might have different value
+                // We only care inside a video game about this.
+                let health_sum = healths[minimaxing_side as usize]
+                    .iter()
+                    .filter(|x| **x > 0.0)
+                    .sum::<f32>();
+                if minimaxing_side {
+                    return Some(-health_sum);
+                } else {
+                    return Some(health_sum);
+                }
+            } else {
+                let mut best_sum: Option<f32> = None;
+                for i in 0..available_creatures[!minimaxing_side as usize].len() {
+                    let new_battler = available_creatures[!minimaxing_side as usize][i];
+                    let mut new_battlers = battlers.clone();
+                    new_battlers[!minimaxing_side as usize] = new_battler;
+                    let mut updated_available_creatures = available_creatures.clone();
+                    updated_available_creatures[!minimaxing_side as usize].remove(i);
+                    let health_sum = self
+                        .get_forced_switch_with_min_maxing(
+                            new_battlers,
+                            matchup_matrix,
+                            healths.clone(),
+                            updated_available_creatures,
+                            !minimaxing_side,
+                        )
+                        .unwrap();
+                    if best_sum.is_none()
+                        || (minimaxing_side && best_sum.unwrap() < health_sum)
+                        || (!minimaxing_side && best_sum.unwrap() > health_sum)
+                    {
+                        best_sum = Some(health_sum);
+                    }
+                }
+                return best_sum;
+            }
+        } else {
+            panic!("Should never be neutral matchup");
+        }
+    }
+
+    fn get_forced_switch_with_min_maxing_setup(
+        &self,
+        matchup_matrix: &Vec<Vec<([f32; 2], bool)>>,
+        healths: &[Vec<f32>; 2],
+        actioner: bool,
+    ) -> usize {
+        let team_size = healths[0].len();
+        let first_available_switches = (0..team_size)
+            .filter(|x| healths[0][*x] > 0.0 && &self.battler_ids[0] != x)
+            .collect::<Vec<usize>>();
+        let second_available_switches = (0..team_size)
+            .filter(|x| healths[1][*x] > 0.0 && &self.battler_ids[1] != x)
+            .collect::<Vec<usize>>();
+        let available_creatures = [first_available_switches, second_available_switches];
+        let available_creatures_len = available_creatures[actioner as usize].len();
+        if available_creatures_len == 1 {
+            return available_creatures[actioner as usize][0];
+        } else if available_creatures_len == 0 {
+            panic!("Shouldn't try when no creatures")
+        }
+        let mut best_sum: Option<(f32, usize)> = None;
+        for i in 0..available_creatures[actioner as usize].len() {
+            let new_battler = available_creatures[actioner as usize][i];
+            let mut new_battlers = self.battler_ids.clone();
+            new_battlers[actioner as usize] = new_battler;
+            let mut updated_available_creatures = available_creatures.clone();
+            updated_available_creatures[actioner as usize].remove(i);
+            let health_sum = self
+                .get_forced_switch_with_min_maxing(
+                    new_battlers,
+                    matchup_matrix,
+                    healths.clone(),
+                    updated_available_creatures,
+                    actioner,
+                )
+                .unwrap();
+            if best_sum.is_none()
+                || (actioner && best_sum.unwrap().0 > health_sum)
+                || (!actioner && best_sum.unwrap().0 < health_sum)
+            {
+                best_sum = Some((health_sum, new_battler));
+            }
+        }
+        best_sum.unwrap().1
+    }
     /// Only accurate with moves with only one move effect and will automatically test with optimistic BattleSettings currently
     /// Some naughty repeating :(
     fn check_move_damage(
