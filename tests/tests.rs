@@ -1,6 +1,7 @@
 use std::vec;
 
 use turn_based_ai_research::ai::*;
+use turn_based_ai_research::creature_generator::*;
 use turn_based_ai_research::*;
 
 fn setup(
