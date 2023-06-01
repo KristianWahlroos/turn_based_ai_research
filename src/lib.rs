@@ -1668,28 +1668,6 @@ impl Creature {
         }
     }
 
-    pub fn generate_creature(creature_generator: &CreatureGenerator) -> Creature {
-        let (base_stats, sum) = creature_generator
-            .base_stats_generation
-            .get_base_stats_with_sum();
-        let level = creature_generator.level_generation.get_level(sum);
-        let stats = Stats::new(base_stats, level);
-        let types =
-            get_creature_types(creature_generator.dual_type_chance, &mut rand::thread_rng());
-        let moves = creature_generator
-            .move_generation_settings
-            .generate_move_set(&mut types.clone());
-
-        // let level = creature_generator.
-        Creature {
-            species: "generated".to_string(),
-            level,
-            moves,
-            stats,
-            types,
-        }
-    }
-
     pub fn get_stab_modifier(&self, attack_type: &Type) -> f32 {
         for creature_type in &self.types {
             if creature_type == attack_type {

@@ -27,8 +27,8 @@ fn get_team(creature_generator: &CreatureGenerator, size: usize) -> [Vec<Creatur
     let mut second_team = vec![];
 
     for _ in 0..size {
-        first_team.push(Creature::generate_creature(creature_generator));
-        second_team.push(Creature::generate_creature(creature_generator));
+        first_team.push(creature_generator.generate_creature());
+        second_team.push(creature_generator.generate_creature());
     }
     if creature_generator.has_speed_tie_removal {
         loop {

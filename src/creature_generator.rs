@@ -98,6 +98,25 @@ impl CreatureGenerator {
             has_speed_tie_removal: true, // When false more even, but less deterministic battles
         }
     }
+
+    pub fn generate_creature(&self) -> Creature {
+        let (base_stats, sum) = self.base_stats_generation.get_base_stats_with_sum();
+        let level = self.level_generation.get_level(sum);
+        let stats = Stats::new(base_stats, level);
+        let types = get_creature_types(self.dual_type_chance, &mut rand::thread_rng());
+        let moves = self
+            .move_generation_settings
+            .generate_move_set(&mut types.clone());
+
+        // let level = creature_generator.
+        Creature {
+            species: "generated".to_string(),
+            level,
+            moves,
+            stats,
+            types,
+        }
+    }
 }
 
 /// TODOS:
